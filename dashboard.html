@@ -32,21 +32,21 @@
     #greeting{font-size:13px;opacity:.4;margin-left:1rem;}
     #theme-icon{position:absolute;right:.5rem;font-size:26px;}
 
-    /* 2행: 위클리 캘린더 */
-    #weekly-card{flex-shrink:0;padding:.65rem 1.2rem;}
+    /* 1행: 위클리 캘린더 */
+    #weekly-card{flex-shrink:0;padding:.45rem 1.2rem;}
     #weekly-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-    .week-day{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;transition:background .3s;}
-    .week-day-name{font-size:11px;font-weight:500;opacity:.5;text-transform:uppercase;}
-    .week-date{font-size:17px;font-weight:500;opacity:.7;}
-    .week-dot{width:5px;height:5px;border-radius:50%;margin-top:2px;opacity:0;}
-    .week-day.today{background:rgba(255,255,255,0.22);border-radius:14px;}
-    .week-day.today .week-day-name{opacity:.85;font-weight:700;}
-    .week-day.today .week-date{font-size:22px;font-weight:700;opacity:1;}
+    .week-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px;border-radius:10px;transition:background .3s;}
+    .week-day-name{font-size:11px;font-weight:500;opacity:.48;text-transform:uppercase;}
+    .week-date{font-size:15px;font-weight:500;opacity:.65;}
+    .week-dot{width:5px;height:5px;border-radius:50%;margin-top:1px;opacity:0;}
+    .week-day.today{background:rgba(255,255,255,0.24);border-radius:12px;}
+    .week-day.today .week-day-name{opacity:.88;font-weight:700;}
+    .week-day.today .week-date{font-size:20px;font-weight:700;opacity:1;}
     .week-day.has-event .week-dot{opacity:.75;}
 
     /* 3행: 다가오는 일정 */
-    #events-card{flex:2.2;}
-    .event-item{display:flex;align-items:center;gap:16px;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.12);}
+    #events-card{flex:1.6;}
+    .event-item{display:flex;align-items:center;gap:16px;padding:7px 0;border-bottom:1px solid rgba(128,128,128,.12);}
     .event-item:last-child{border-bottom:none;}
     .event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
     .dday-today{background:rgba(200,0,0,.16);color:#c00;}
@@ -60,11 +60,13 @@
     .event-badge{font-size:12px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;flex-shrink:0;}
 
     /* 4행: 한마디 */
-    #quote-card{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
-    .quote-deco{font-size:20px;margin-bottom:4px;}
-    .quote-text{font-size:20px;line-height:1.65;opacity:.88;}
-    .quote-author{font-size:13px;opacity:.38;margin-top:5px;}
-    #sync-status{font-size:10px;opacity:.28;float:right;}
+    #quote-card{flex:.9;padding:.7rem 1.2rem;}
+    .quote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .quote-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;}
+    #sync-status{font-size:10px;opacity:.28;}
+    .quote-body{display:flex;justify-content:center;align-items:center;text-align:center;}
+    .quote-text{font-size:20px;line-height:1.6;opacity:.88;}
+    .quote-author{font-size:13px;opacity:.38;margin-top:4px;text-align:center;}
 
     /* 5행: 날씨/멘트/시설 */
     #bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;flex:2;}
@@ -104,7 +106,12 @@
 
 <div id="dash">
 
-  <!-- 1행: 날짜+시간 -->
+  <!-- 1행: 위클리 캘린더 -->
+  <div id="weekly-card" class="card">
+    <div id="weekly-row"></div>
+  </div>
+
+  <!-- 2행: 날짜+시간 -->
   <div id="header-card" class="card">
     <div id="header-center">
       <div id="date-display">로딩 중...</div>
@@ -112,11 +119,6 @@
       <div id="greeting"></div>
     </div>
     <div id="theme-icon">☀️</div>
-  </div>
-
-  <!-- 2행: 위클리 캘린더 -->
-  <div id="weekly-card" class="card">
-    <div id="weekly-row"></div>
   </div>
 
   <!-- 3행: 다가오는 일정 -->
@@ -127,10 +129,16 @@
 
   <!-- 4행: 오늘의 한마디 -->
   <div id="quote-card" class="card">
-    <div class="section-label">오늘의 한마디 <span id="sync-status"></span></div>
-    <div class="quote-deco">👩‍👧 💕</div>
-    <div class="quote-text" id="quote-text">불러오는 중...</div>
-    <div class="quote-author" id="quote-author"></div>
+    <div class="quote-header">
+      <span class="quote-label">오늘의 한마디</span>
+      <span id="sync-status"></span>
+    </div>
+    <div class="quote-body">
+      <div>
+        <div class="quote-text" id="quote-text">불러오는 중...</div>
+        <div class="quote-author" id="quote-author"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 5행: 날씨 / 멘트 / 시설 -->
@@ -323,14 +331,14 @@ function renderEvents(events){
 function fetchSheetData(){
   fetch(OPENSHEET_URL).then(function(r){return r.json();}).then(function(rows){
     var data={};rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
-    document.getElementById('quote-text').textContent='\u201C'+(data['quote']||'오늘 하루도 충분히 잘하고 있어요.')+'\u201D';
+    document.getElementById('quote-text').textContent='🙋🏻\u200d♀️ \u201C'+(data['quote']||'오늘 하루도 충분히 잘하고 있어요.')+'\u201D 💕';
     document.getElementById('quote-author').textContent=data['author']?'— '+data['author']:'';
     var events=[];
     for(var i=1;i<=10;i++){if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){var rep=data['event'+i+'_repeat']||'';events.push({date:data['event'+i+'_date'],time:data['event'+i+'_time'],title:data['event'+i+'_title'],type:rep?'repeat':'one-time',note:rep});}}
     renderEvents(events);
     var now=new Date();
     document.getElementById('sync-status').textContent=to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨';
-  }).catch(function(){document.getElementById('quote-text').textContent='\u201C오늘 하루도 충분히 잘하고 있어요.\u201D';document.getElementById('sync-status').textContent='오프라인';});
+  }).catch(function(){document.getElementById('quote-text').textContent='🙋🏻\u200d♀️ \u201C오늘 하루도 충분히 잘하고 있어요.\u201D 💕';document.getElementById('sync-status').textContent='오프라인';});
 }
 
 /* ── 날씨 ── */
