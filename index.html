@@ -633,6 +633,28 @@ function showToast(message){
     toast.classList.remove('show');
   }, 1600);
 }
+  function burstCelebration(action){
+  var layer = document.getElementById('celebration-layer');
+  var pool = ['💖','💕','✨','🌟'];
+
+  if(action === '일어남') pool = ['☀️','🌼','✨','💛'];
+  if(action === '잘래') pool = ['🌙','💤','⭐','💙'];
+  if(action === '아침약' || action === '저녁약') pool = ['💊','✨','💖','🌈'];
+
+  for(var i=0; i<18; i++){
+    var el = document.createElement('div');
+    el.className = 'celebrate-item';
+    el.textContent = pool[Math.floor(Math.random() * pool.length)];
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.animationDelay = (Math.random() * 0.25) + 's';
+    el.style.fontSize = (22 + Math.random() * 16) + 'px';
+    layer.appendChild(el);
+
+    setTimeout((function(node){
+      return function(){ node.remove(); };
+    })(el), 2200);
+  }
+}
 
 function popEmojiFromButton(button, emoji){
   var rect = button.getBoundingClientRect();
@@ -688,9 +710,10 @@ function logAction(action, clickedButton) {
     return;
   }
 
-  markButtonDone(action);
-  popEmojiFromButton(clickedButton, getActionEmoji(action));
-  showToast(action + " 기록 완료!");
+ markButtonDone(action);
+popEmojiFromButton(clickedButton, getActionEmoji(action));
+burstCelebration(action);
+showToast(action + " 기록 완료!");
 })
 .catch(function(err) {
   clickedButton.classList.remove('saving');
