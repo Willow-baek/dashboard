@@ -93,6 +93,117 @@
     #alert-popup .al-clock{font-size:17px;opacity:.62;margin-bottom:10px;}
     #alert-popup .al-event{font-size:15px;opacity:.72;border-top:1px solid rgba(255,255,255,0.12);padding-top:10px;}
     #alert-popup .al-hint{font-size:11px;opacity:.3;margin-top:8px;}
+/* 체크 버튼 */
+#action-buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:.45rem;
+  margin-top:.35rem;
+}
+
+.action-btn{
+  position:relative;
+  border:none;
+  border-radius:18px;
+  padding:.85rem .4rem;
+  font-family:inherit;
+  font-size:16px;
+  font-weight:600;
+  background:rgba(255,255,255,0.32);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  color:inherit;
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+  transition:transform .12s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:74px;
+}
+
+.action-btn:active{
+  transform:scale(0.94);
+}
+
+.action-btn:hover{
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+
+.action-btn.wake{background:rgba(255,230,140,0.28);}
+.action-btn.sleep{background:rgba(180,190,255,0.25);}
+.action-btn.med{background:rgba(180,255,210,0.22);}
+
+.btn-emoji{
+  font-size:22px;
+  line-height:1;
+}
+
+.btn-text{
+  font-size:15px;
+  line-height:1.1;
+}
+
+.action-btn.done{
+  opacity:.72;
+  box-shadow:none;
+}
+
+.action-btn.saving{
+  transform:scale(0.96);
+}
+
+#toast{
+  position:fixed;
+  left:50%;
+  bottom:90px;
+  transform:translateX(-50%) translateY(16px);
+  background:rgba(20,28,40,0.92);
+  color:#fff;
+  padding:12px 18px;
+  border-radius:999px;
+  font-size:14px;
+  font-weight:600;
+  opacity:0;
+  pointer-events:none;
+  z-index:1000;
+  transition:opacity .25s ease, transform .25s ease;
+  white-space:nowrap;
+}
+
+#toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+#emoji-pop-layer{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:1001;
+}
+
+.emoji-pop{
+  position:fixed;
+  font-size:28px;
+  animation:emojiFloat .9s ease-out forwards;
+}
+
+@keyframes emojiFloat{
+  0%{
+    transform:translate(-50%,0) scale(.8);
+    opacity:0;
+  }
+  15%{
+    opacity:1;
+  }
+  100%{
+    transform:translate(-50%,-46px) scale(1.18);
+    opacity:0;
+  }
+}
   </style>
 </head>
 <body>
@@ -158,11 +269,36 @@
       <div class="section-label">날씨 한마디</div>
       <div id="weather-comments"></div>
     </div>
-    <div id="facility-card" class="card">
+     <div id="facility-card" class="card">
       <div class="section-label">커뮤니티 시설</div>
       <div id="facility-list"></div>
     </div>
   </div>
+
+  <div id="action-buttons">
+    <button class="action-btn wake" onclick="logAction('일어남')">
+      <span class="btn-emoji">☀️</span>
+      <span class="btn-text">일어남</span>
+    </button>
+
+    <button class="action-btn sleep" onclick="logAction('잘래')">
+      <span class="btn-emoji">🌙</span>
+      <span class="btn-text">잘래</span>
+    </button>
+
+    <button class="action-btn med" onclick="logAction('아침약')">
+      <span class="btn-emoji">💊</span>
+      <span class="btn-text">아침약</span>
+    </button>
+
+    <button class="action-btn med" onclick="logAction('저녁약')">
+      <span class="btn-emoji">💊</span>
+      <span class="btn-text">저녁약</span>
+    </button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="emoji-pop-layer"></div>
 
 </div>
 
