@@ -645,21 +645,29 @@ function logAction(action, clickedButton) {
       note: ""
     })
   })
-  .then(function(res) {
-    return res.json();
-  })
-  .then(function(data) {
-    clickedButton.classList.remove('saving');
-    markButtonDone(action);
-    popEmojiFromButton(clickedButton, getActionEmoji(action));
-    showToast(action + " 기록 완료!");
-    console.log("saved:", data);
-  })
-  .catch(function(err) {
-    clickedButton.classList.remove('saving');
-    showToast("기록 실패");
-    console.error(err);
+.then(function(res) {
+  return res.text().then(function(text) {
+    return { ok: res.ok, status: res.status, text: text };
   });
+})
+.then(function(result) {
+  clickedButton.classList.remove('saving');
+  console.log("response:", result);
+
+  if (!result.ok) {
+    showToast("기록 실패: " + result.status);
+    return;
+  }
+
+  markButtonDone(action);
+  popEmojiFromButton(clickedButton, getActionEmoji(action));
+  showToast(action + " 기록 완료!");
+})
+.catch(function(err) {
+  clickedButton.classList.remove('saving');
+  showToast("기록 실패: " + err.message);
+  console.error(err);
+});
 }
 </script>
 </body>
