@@ -276,22 +276,22 @@
   </div>
 
   <div id="action-buttons">
-    <button class="action-btn wake" onclick="logAction('일어남')">
+    <button class="action-btn wake" onclick="logAction('일어남', this)">
       <span class="btn-emoji">☀️</span>
       <span class="btn-text">일어남</span>
     </button>
 
-    <button class="action-btn sleep" onclick="logAction('잘래')">
+<button class="action-btn sleep" onclick="logAction('잘래', this)">
       <span class="btn-emoji">🌙</span>
       <span class="btn-text">잘래</span>
     </button>
 
-    <button class="action-btn med" onclick="logAction('아침약')">
+<button class="action-btn med" onclick="logAction('아침약', this)">
       <span class="btn-emoji">💊</span>
       <span class="btn-text">아침약</span>
     </button>
 
-    <button class="action-btn med" onclick="logAction('저녁약')">
+<button class="action-btn med" onclick="logAction('저녁약', this)">
       <span class="btn-emoji">💊</span>
       <span class="btn-text">저녁약</span>
     </button>
@@ -581,6 +581,87 @@ setInterval(fetchSheetData,30000);
 setInterval(loadWeather,600000);
 setInterval(checkAlerts,30000);
 window.addEventListener('resize',function(){var c=document.getElementById('bg-canvas');c.width=window.innerWidth;c.height=window.innerHeight;});
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYzTRG35xwtv9a2e1VRaZsLK-wsM2Bv3_I0VV8OO0lIEZ3ntM5e0EkQD_VpFETtGOa9w/exec";
+
+function getCategory(action){
+  if(action === '일어남' || action === '잘래') return '기상';
+  if(action === '아침약' || action === '저녁약') return '약';
+  return '';
+}
+
+function getActionEmoji(action){
+  if(action === '일어남') return '☀️';
+  if(action === '잘래') return '🌙';
+  if(action === '아침약' || action === '저녁약') return '💊';
+  return '✨';
+}
+
+function showToast(message){
+  var toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(function(){
+    toast.classList.remove('show');
+  }, 1600);
+}
+
+function popEmojiFromButton(button, emoji){
+  var rect = button.getBoundingClientRect();
+  var pop = document.createElement('div');
+  pop.className = 'emoji-pop';
+  pop.textContent = emoji;
+  pop.style.left = (rect.left + rect.width / 2) + 'px';
+  pop.style.top = (rect.top + 14) + 'px';
+  document.getElementById('emoji-pop-layer').appendChild(pop);
+  setTimeout(function(){
+    pop.remove();
+  }, 950);
+}
+
+function markButtonDone(action){
+  var buttons = document.querySelectorAll('.action-btn');
+  buttons.forEach(function(btn){
+   var labelEl = btn.querySelector('.btn-text');
+   var label = labelEl ? labelEl.textContent.trim() : '';
+   if(label === action){
+      btn.classList.add('done');
+    }
+  });
+}
+
+function logAction(action, clickedButton) {
+  var category = getCategory(action);
+
+  clickedButton.classList.add('saving');
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      category: category,
+      action: action,
+      note: ""
+    })
+  })
+  .then(function(res) {
+    return res.json();
+  })
+  .then(function(data) {
+    clickedButton.classList.remove('saving');
+    markButtonDone(action);
+    popEmojiFromButton(clickedButton, getActionEmoji(action));
+    showToast(action + " 기록 완료!");
+    console.log("saved:", data);
+  })
+  .catch(function(err) {
+    clickedButton.classList.remove('saving');
+    showToast("기록 실패");
+    console.error(err);
+  });
+}
 </script>
 </body>
 </html>
