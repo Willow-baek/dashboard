@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>우리 집 대시보드</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; background:#000; }
+    #dash {
+      width:100%; height:100vh;
+      padding:0.75rem;
+      font-family:-apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      display:flex; flex-direction:column; gap:0.55rem;
+      transition:background 1.5s ease;
+      overflow:hidden;
+    }
+    .card {
+      border-radius:16px;
+      padding:0.7rem 1rem;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      transition:background 1.5s ease;
+    }
+    .section-label { font-size:10px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; opacity:0.38; margin-bottom:5px; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:0.55rem; flex-shrink:0; }
+
+    #header-card { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+    #date-display { font-size:34px; font-weight:500; line-height:1; letter-spacing:-0.5px; }
+    #time-display { font-size:20px; font-weight:400; opacity:0.6; margin-left:1rem; }
+    #greeting     { font-size:12px; opacity:0.4; margin-left:0.7rem; }
+    #theme-icon   { font-size:24px; }
+
+    #weather-card { display:flex; flex-direction:column; gap:4px; }
+    .weather-top  { display:flex; align-items:center; gap:10px; }
+    .weather-temp { font-size:28px; font-weight:500; line-height:1; }
+    .weather-meta { display:flex; flex-direction:column; gap:1px; }
+    .weather-meta span { font-size:12px; opacity:0.6; }
+    .weather-comments { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
+    .weather-comment-line { font-size:12px; opacity:0.78; line-height:1.4; }
+
+    .fac-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(128,128,128,0.1); }
+    .fac-row:last-child { border-bottom:none; }
+    .fac-name { font-size:14px; }
+    .fac-time { font-size:14px; font-weight:500; opacity:0.75; }
+    .closed { opacity:0.35; text-decoration:line-through; }
+
+    #events-card { flex-shrink:0; }
+    .event-item { display:flex; align-items:center; gap:12px; padding:6px 0; border-bottom:1px solid rgba(128,128,128,0.1); }
+    .event-item:last-child { border-bottom:none; }
+    .event-dday { font-size:13px; font-weight:500; min-width:50px; text-align:center; padding:3px 7px; border-radius:7px; flex-shrink:0; }
+    .dday-today { background:rgba(230,81,0,0.18); color:#bf360c; }
+    .dday-soon  { background:rgba(121,134,203,0.22); color:#283593; }
+    .dday-later { background:rgba(128,128,128,0.15); }
+    .event-when { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .event-date { font-size:16px; font-weight:500; opacity:0.9; white-space:nowrap; }
+    .event-sep  { font-size:13px; opacity:0.3; }
+    .event-time-txt { font-size:16px; opacity:0.65; white-space:nowrap; }
+    .event-title { font-size:18px; font-weight:500; flex:1; }
+    .event-badge { font-size:11px; padding:2px 7px; border-radius:5px; opacity:0.7; white-space:nowrap; flex-shrink:0; }
+
+    #quote-card { flex:1; min-height:0; }
+    .quote-text   { font-size:16px; line-height:1.65; opacity:0.85; }
+    .quote-author { font-size:12px; opacity:0.38; margin-top:4px; }
+    #sync-status  { font-size:10px; opacity:0.3; float:right; }
+  </style>
+</head>
+<body>
+<div id="dash">
+
+  <div id="header-card" class="card">
+    <div style="display:flex;align-items:baseline;">
+      <div id="date-display">로딩 중...</div>
+      <div id="time-display">--:--</div>
+      <div id="greeting"></div>
+    </div>
+    <div id="theme-icon">☀️</div>
+  </div>
+
+  <div class="row2">
+    <div id="weather-card" class="card">
+      <div class="section-label">날씨</div>
+      <div class="weather-top">
+        <div id="weather-icon" style="font-size:30px;">🌤</div>
+        <div class="weather-meta">
+          <div class="weather-temp" id="weather-temp">--°</div>
+          <span id="weather-desc">확인 중...</span>
+          <span id="weather-feels"></span>
+        </div>
+      </div>
+      <div class="weather-comments" id="weather-comments"></div>
+    </div>
+
+    <div id="facility-card" class="card">
+      <div class="section-label">오늘의 커뮤니티 시설</div>
+      <div id="facility-list"></div>
+    </div>
+  </div>
+
+  <div id="events-card" class="card">
+    <div class="section-label">다가오는 일정</div>
+    <div id="events-list"></div>
+  </div>
+
+  <div id="quote-card" class="card">
+    <div class="section-label">오늘의 한마디 <span id="sync-status"></span></div>
+    <div class="quote-text" id="quote-text">불러오는 중...</div>
+    <div class="quote-author" id="quote-author"></div>
+  </div>
+
+</div>
+<script>
+  /* ==============================
+     설정: 구글 시트 ID
+  ============================== */
+  var SHEET_ID = "1Iu8teB0ds5lzNVZwb-V353WnEjzlSU4anMAcMZJ0LY4";
+
+  /* ==============================
+     다가오는 일정 — 직접 입력
+     날짜: "YYYY-MM-DD", 시간: "HH:MM"
+     type: "one-time" 또는 "repeat"
+     note: 반복 설명 (one-time이면 "")
+  ============================== */
+  var EVENTS = [
+    { date:"2026-04-05", time:"14:00", title:"와이랩 아카데미 청강",  type:"one-time", note:"" },
+    { date:"2026-04-09", time:"13:20", title:"해람 정신건강의학과",    type:"repeat",   note:"2주마다" },
+  ];
+
+  /* ==============================
+     시설 운영시간 (0=일 1=월 2=화 3=수 4=목 5=금 6=토)
+     null = 휴무/휴관
+  ============================== */
+  var FAC = {
+    gym:     { name:"🏋 헬스장", hours:{0:"10:00~18:00",1:null,2:"06:00~23:00",3:"06:00~23:00",4:"06:00~23:00",5:"06:00~23:00",6:"06:00~23:00"} },
+    roof:    { name:"🏙 옥상",   hours:{0:"08:00~22:00",1:"08:00~22:00",2:"08:00~22:00",3:"08:00~22:00",4:"08:00~22:00",5:"08:00~22:00",6:"08:00~22:00"} },
+    library: { name:"📚 도서관", hours:{0:null,1:null,2:"10:00~19:00",3:"10:00~19:00",4:"10:00~19:00",5:"10:00~19:00",6:"10:00~18:00"} },
+  };
+
+  /* ============================== */
+
+  var DAYS_KR   = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+  var MONTHS_KR = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+  function getTheme(h) {
+    if (h>=6  && h<12) return { bg:"linear-gradient(150deg,#fff8e1,#ffe0b2)", card:"rgba(255,255,255,0.62)", text:"#3e2723", icon:"☀️",  label:"좋은 아침이에요" };
+    if (h>=12 && h<18) return { bg:"linear-gradient(150deg,#e3f2fd,#bbdefb)", card:"rgba(255,255,255,0.62)", text:"#0d3b6e", icon:"🌤️", label:"좋은 오후예요" };
+    if (h>=18 && h<21) return { bg:"linear-gradient(150deg,#ede7f6,#fce4ec)", card:"rgba(255,255,255,0.52)", text:"#37306b", icon:"🌅", label:"저녁이에요" };
+    return                    { bg:"linear-gradient(150deg,#1a1a2e,#16213e)", card:"rgba(255,255,255,0.08)", text:"#e8eaf6", icon:"🌙",  label:"편히 쉬어요" };
+  }
+
+  function updateClock() {
+    var now = new Date(), h = now.getHours();
+    var theme = getTheme(h);
+    document.getElementById("dash").style.background = theme.bg;
+    document.getElementById("dash").style.color = theme.text;
+    document.querySelectorAll(".card").forEach(function(c){ c.style.background = theme.card; });
+    document.getElementById("theme-icon").textContent = theme.icon;
+    document.getElementById("greeting").textContent = " · " + theme.label;
+    document.getElementById("time-display").textContent = " " + String(h).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
+    document.getElementById("date-display").textContent = now.getFullYear() + "년 " + MONTHS_KR[now.getMonth()] + " " + now.getDate() + "일 " + DAYS_KR[now.getDay()];
+  }
+
+  function loadFacility() {
+    var dow = new Date().getDay();
+    document.getElementById("facility-list").innerHTML = ["gym","roof","library"].map(function(key){
+      var f = FAC[key], t = f.hours[dow];
+      return '<div class="fac-row"><span class="fac-name' + (!t?" closed":"") + '">' + f.name + '</span><span class="fac-time' + (!t?" closed":"") + '">' + (t||"휴무·휴관") + '</span></div>';
+    }).join("");
+  }
+
+  function renderEvents() {
+    var list = document.getElementById("events-list");
+    var now = new Date();
+    var todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var todayStr = now.toISOString().slice(0,10);
+    var sorted = EVENTS.filter(function(e){ return e.date >= todayStr; })
+      .sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); })
+      .slice(0,4);
+    if (!sorted.length) {
+      list.innerHTML = '<div style="opacity:0.4;font-size:16px;padding:5px 0;">다가오는 일정이 없어요 😊</div>';
+      return;
+    }
+    list.innerHTML = sorted.map(function(ev){
+      var evDate = new Date(ev.date + "T" + ev.time);
+      var evMid  = new Date(evDate.getFullYear(), evDate.getMonth(), evDate.getDate());
+      var diff   = Math.round((evMid - todayMid) / 86400000);
+      var ddayText  = diff === 0 ? "D-day" : "D-" + diff;
+      var ddayClass = diff === 0 ? "dday-today" : diff <= 3 ? "dday-soon" : "dday-later";
+      var mo  = parseInt(ev.date.slice(5,7)), d = parseInt(ev.date.slice(8,10));
+      var dow = DAYS_KR[evDate.getDay()];
+      var hh  = parseInt(ev.time.slice(0,2)), mm = ev.time.slice(3);
+      var ampm = hh < 12 ? "오전" : "오후", h12 = hh % 12 || 12;
+      var badgeColor = ev.type === "repeat" ? "rgba(121,134,203,0.28)" : "rgba(100,180,120,0.22)";
+      var badgeText  = ev.type === "repeat" ? "🔁 " + ev.note : "1회";
+      return '<div class="event-item">' +
+        '<div class="event-dday ' + ddayClass + '">' + ddayText + '</div>' +
+        '<div class="event-when">' +
+          '<span class="event-date">' + mo + '월 ' + d + '일 (' + dow + ')</span>' +
+          '<span class="event-sep">·</span>' +
+          '<span class="event-time-txt">' + ampm + ' ' + h12 + ':' + mm + '</span>' +
+        '</div>' +
+        '<span class="event-title">' + ev.title + '</span>' +
+        '<span class="event-badge" style="background:' + badgeColor + ';">' + badgeText + '</span>' +
+      '</div>';
+    }).join("");
+  }
+
+  /* ==============================
+     구글 시트 → 오늘의 한마디만
+  ============================== */
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXK5mfDq0kzNE9FDOrnw4HX7DnS020nG70k-5hvCKysyKzyNMRVcqmyjI3SAUi_YO7/exec";
+
+  function fetchQuote() {
+    fetch(SCRIPT_URL)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var quote  = data["quote"]  || "오늘 하루도 충분히 잘하고 있어요.";
+        var author = data["author"] || "";
+        document.getElementById("quote-text").textContent   = "\u201C" + quote + "\u201D";
+        document.getElementById("quote-author").textContent = author ? "— " + author : "";
+        var now = new Date();
+        document.getElementById("sync-status").textContent =
+          String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0") + " 업데이트됨";
+      })
+      .catch(function(){
+        document.getElementById("quote-text").textContent = "\u201C오늘 하루도 충분히 잘하고 있어요.\u201D";
+        document.getElementById("sync-status").textContent = "오프라인";
+      });
+  }
+
+  /* ==============================
+     날씨
+  ============================== */
+  function makeComments(cur, high, low, maxProb, afternoonProb) {
+    var lines = [], diff = high - low, h = new Date().getHours();
+    if      (maxProb >= 70)       lines.push("☂️ 오늘 비가 꽤 올 것 같아요. 우산 꼭 챙겨요!");
+    else if (afternoonProb >= 50) lines.push("🌂 오후에 비 올 수 있어요. 나갈 일 있으면 우산 챙겨요.");
+    else if (maxProb >= 30)       lines.push("🌦 비 올 수도 있으니 우산 챙겨두면 좋을 것 같아요.");
+    else                          lines.push("☀️ 오늘은 우산 없이 괜찮을 것 같아요.");
+    if      (diff >= 10) lines.push("🧥 일교차가 " + Math.round(diff) + "도나 나요. 겉옷 꼭 챙겨요!");
+    else if (diff >= 7)  lines.push("🌡 낮과 밤 기온 차이가 있어요. 저녁엔 쌀쌀할 수 있어요.");
+    if      (cur <= 2)   lines.push("🥶 오늘 많이 춥네요. 따뜻하게 입어요.");
+    else if (cur <= 8)   lines.push("🧤 꽤 쌀쌀해요. 손 시리지 않게 챙겨요.");
+    else if (cur >= 28)  lines.push("🥵 오늘 많이 더워요. 물 자주 마셔요.");
+    else if (cur >= 23)  lines.push("😊 오늘 날씨 따뜻하네요.");
+    if      (h >= 6  && h < 9)  lines.push("🍳 아침 챙겨 먹었어요?");
+    else if (h >= 18 && h < 21) lines.push("🌙 오늘 하루도 수고했어요.");
+    return lines.slice(0,3);
+  }
+
+  function loadWeather() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function(pos){
+      fetch("https://api.open-meteo.com/v1/forecast?latitude=" + pos.coords.latitude + "&longitude=" + pos.coords.longitude + "&current=temperature_2m,apparent_temperature,weather_code&hourly=precipitation_probability&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1")
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var cur   = Math.round(data.current.temperature_2m);
+          var feels = Math.round(data.current.apparent_temperature);
+          var code  = data.current.weather_code;
+          var high  = Math.round(data.daily.temperature_2m_max[0]);
+          var low   = Math.round(data.daily.temperature_2m_min[0]);
+          var probs = (data.hourly && data.hourly.precipitation_probability) || [];
+          var maxProb       = Math.max.apply(null, probs.slice(0,24));
+          var afternoonProb = Math.max.apply(null, probs.slice(12,18));
+          var icons = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",51:"🌦️",53:"🌦️",61:"🌧️",63:"🌧️",65:"🌧️",71:"❄️",80:"🌦️",95:"⛈️"};
+          var descs = {0:"맑음",1:"대체로 맑음",2:"구름 조금",3:"흐림",45:"안개",51:"이슬비",53:"이슬비",61:"비",63:"비",65:"강한 비",71:"눈",80:"소나기",95:"뇌우"};
+          document.getElementById("weather-icon").textContent  = icons[code] || "🌡️";
+          document.getElementById("weather-temp").textContent  = cur + "°";
+          document.getElementById("weather-desc").textContent  = (descs[code]||"") + "  최고 " + high + "° / 최저 " + low + "°";
+          document.getElementById("weather-feels").textContent = "체감 " + feels + "°";
+          var comments = makeComments(cur, high, low, maxProb, afternoonProb);
+          document.getElementById("weather-comments").innerHTML = comments.map(function(c){
+            return '<span class="weather-comment-line">' + c + '</span>';
+          }).join("");
+        }).catch(function(){});
+    }, function(){});
+  }
+
+  /* ============================== */
+  updateClock();
+  loadFacility();
+  renderEvents();
+  loadWeather();
+  fetchQuote();
+  setInterval(updateClock, 10000);
+  setInterval(fetchQuote,  30000);
+</script>
+</body>
+</html>
