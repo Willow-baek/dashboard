@@ -213,7 +213,7 @@
   var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXK5mfDq0kzNE9FDOrnw4HX7DnS020nG70k-5hvCKysyKzyNMRVcqmyjI3SAUi_YO7/exec";
 
   function fetchQuote() {
-    fetch(SCRIPT_URL)
+    fetch(SCRIPT_URL, { redirect: 'follow' })
       .then(function(r){ return r.json(); })
       .then(function(data){
         var quote  = data["quote"]  || "오늘 하루도 충분히 잘하고 있어요.";
