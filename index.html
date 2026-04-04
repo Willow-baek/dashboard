@@ -204,6 +204,34 @@
     opacity:0;
   }
 }
+    #celebration-layer{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:1002;
+}
+
+.celebrate-item{
+  position:fixed;
+  top:-30px;
+  font-size:28px;
+  animation:fallPop 1.8s linear forwards;
+}
+
+@keyframes fallPop{
+  0%{
+    transform:translateY(0) rotate(0deg) scale(.8);
+    opacity:0;
+  }
+  10%{
+    opacity:1;
+  }
+  100%{
+    transform:translateY(110vh) rotate(220deg) scale(1.15);
+    opacity:0;
+  }
+}
   </style>
 </head>
 <body>
@@ -299,6 +327,7 @@
 
   <div id="toast"></div>
   <div id="emoji-pop-layer"></div>
+  <div id="celebration-layer"></div>
 
 </div>
 
