@@ -47,7 +47,7 @@
   letter-spacing:.1em;
   text-transform:uppercase;
   opacity:.38;
-  margin-bottom:10px;
+  margin-bottom:8px;
 }
 
     /* 1행: 날짜+시간 */
@@ -71,7 +71,12 @@
     .week-day.has-event .week-dot{opacity:.75;}
 
     /* 3행: 다가오는 일정 */
-  #events-card{flex:0 0 auto;max-height:190px;overflow:hidden;}
+  #events-card{
+  flex:0 0 auto;
+  max-height:190px;
+  overflow:hidden;
+  padding:12px 14px 10px;
+}
 
 .event-item:last-child{border-bottom:none;}
 
