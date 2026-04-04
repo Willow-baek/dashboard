@@ -9,75 +9,88 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     html,body{height:100%;overflow:hidden;}
-
-    /* ── 배경 레이어 ── */
     #bg-wrap{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden;transition:background 3s ease;}
     #bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
     #lightning{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:rgba(200,220,255,0);transition:background 0.05s;}
-
-    /* 태양 */
-    #sun{position:absolute;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#fff9d0,#ffd700 55%,#ff9900);box-shadow:0 0 30px #ffd700,0 0 70px rgba(255,180,0,0.55),0 0 120px rgba(255,130,0,0.3);top:55px;right:130px;display:none;animation:sunPulse 4s ease-in-out infinite;overflow:visible;}
+    #sun{position:absolute;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#fff9d0,#ffd700 55%,#ff9900);box-shadow:0 0 30px #ffd700,0 0 70px rgba(255,180,0,0.55);top:55px;right:130px;display:none;animation:sunPulse 4s ease-in-out infinite;overflow:visible;}
     #sun-rays{position:absolute;top:0;left:0;width:88px;height:88px;animation:raysRotate 22s linear infinite;}
     .ray{position:absolute;width:2px;border-radius:2px;background:linear-gradient(to bottom,rgba(255,220,80,0.85),transparent);transform-origin:50% 100%;}
-    @keyframes sunPulse{0%,100%{box-shadow:0 0 30px #ffd700,0 0 70px rgba(255,180,0,0.55);}50%{box-shadow:0 0 50px #ffd700,0 0 110px rgba(255,180,0,0.65),0 0 150px rgba(255,130,0,0.35);}}
+    @keyframes sunPulse{0%,100%{box-shadow:0 0 30px #ffd700,0 0 70px rgba(255,180,0,0.55);}50%{box-shadow:0 0 50px #ffd700,0 0 110px rgba(255,180,0,0.65);}}
     @keyframes raysRotate{to{transform:rotate(360deg);}}
-
-    /* 달 */
-    #moon{position:absolute;width:62px;height:62px;border-radius:50%;background:#e8e2cc;box-shadow:0 0 18px rgba(220,210,175,0.55),0 0 36px rgba(200,190,155,0.3),inset -14px -4px 0 rgba(0,0,0,0.22);top:58px;right:125px;display:none;}
-
-    /* 구름 */
+    #moon{position:absolute;width:62px;height:62px;border-radius:50%;background:#e8e2cc;box-shadow:0 0 18px rgba(220,210,175,0.55),inset -14px -4px 0 rgba(0,0,0,0.22);top:58px;right:125px;display:none;}
     .cloud{position:absolute;border-radius:60px;animation:cloudDrift linear infinite;}
     @keyframes cloudDrift{from{transform:translateX(-160%)}to{transform:translateX(calc(100vw + 160%))}}
+    #dash{position:relative;z-index:2;width:100%;height:100vh;padding:0.65rem;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;gap:0.5rem;overflow:hidden;transition:color 2.5s ease;}
+    .card{border-radius:16px;padding:0.85rem 1.2rem;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:background 2.5s ease;}
+    .section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;margin-bottom:6px;}
 
-    /* ── 대시보드 ── */
-    #dash{position:relative;z-index:2;width:100%;height:100vh;padding:0.6rem;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;gap:0.5rem;overflow:hidden;transition:color 2.5s ease;}
-    .card{border-radius:14px;padding:0.65rem 1rem;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:background 2.5s ease;}
-    .section-label{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;margin-bottom:5px;}
-
-    /* 1행 */
+    /* 1행: 날짜+시간 */
     #header-card{display:flex;justify-content:center;align-items:center;flex-shrink:0;position:relative;}
     #header-center{display:flex;align-items:baseline;}
-    #date-display{font-size:32px;font-weight:500;line-height:1;letter-spacing:-.5px;}
-    #time-display{font-size:32px;font-weight:500;line-height:1;letter-spacing:-.5px;margin-left:1.2rem;transition:color 2.5s ease;}
-    #greeting{font-size:11px;opacity:.4;margin-left:.8rem;}
-    #theme-icon{position:absolute;right:.5rem;font-size:22px;}
+    #date-display{font-size:38px;font-weight:500;line-height:1;letter-spacing:-.5px;}
+    #time-display{font-size:38px;font-weight:500;line-height:1;letter-spacing:-.5px;margin-left:1.4rem;transition:color 2.5s ease;}
+    #greeting{font-size:13px;opacity:.4;margin-left:1rem;}
+    #theme-icon{position:absolute;right:.5rem;font-size:26px;}
 
-    /* 2행 3칸 */
-    #middle-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;flex-shrink:0;}
-    #weather-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
-    .weather-top{display:flex;flex-direction:column;align-items:center;gap:6px;}
-    .weather-temp{font-size:36px;font-weight:500;line-height:1;}
-    .weather-meta{display:flex;flex-direction:column;gap:2px;}
-    .weather-meta span{font-size:12px;opacity:.6;}
-    #comment-card{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center;}
-    .wcl{font-size:13px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:6px 12px;border-radius:20px;display:inline-block;align-self:flex-start;}
-    #facility-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
-    .fac-row{display:flex;justify-content:center;align-items:center;padding:5px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:12px;width:100%;}
-    .fac-row:last-child{border-bottom:none;}
-    .fac-name{font-size:13px;white-space:nowrap;}
-    .fac-time{font-size:13px;font-weight:500;opacity:.75;white-space:nowrap;}
-    .closed{opacity:.32;text-decoration:line-through;}
+    /* 2행: 위클리 캘린더 */
+    #weekly-card{flex-shrink:0;padding:.65rem 1.2rem;}
+    #weekly-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+    .week-day{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;transition:background .3s;}
+    .week-day-name{font-size:11px;font-weight:500;opacity:.5;text-transform:uppercase;}
+    .week-date{font-size:17px;font-weight:500;opacity:.7;}
+    .week-dot{width:5px;height:5px;border-radius:50%;margin-top:2px;opacity:0;}
+    .week-day.today{background:rgba(255,255,255,0.22);border-radius:14px;}
+    .week-day.today .week-day-name{opacity:.85;font-weight:700;}
+    .week-day.today .week-date{font-size:22px;font-weight:700;opacity:1;}
+    .week-day.has-event .week-dot{opacity:.75;}
 
-    /* 3행 */
-    #events-card{flex-shrink:0;}
-    .event-item{display:flex;align-items:center;gap:14px;padding:6px 0;border-bottom:1px solid rgba(128,128,128,.1);}
+    /* 3행: 다가오는 일정 */
+    #events-card{flex:2.2;}
+    .event-item{display:flex;align-items:center;gap:16px;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.12);}
     .event-item:last-child{border-bottom:none;}
-    .event-dday{font-size:12px;font-weight:600;min-width:48px;text-align:center;padding:3px 6px;border-radius:6px;flex-shrink:0;}
+    .event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
     .dday-today{background:rgba(200,0,0,.16);color:#c00;}
     .dday-soon{background:rgba(200,0,0,.12);color:#c00;}
     .dday-later{background:rgba(128,128,128,.15);}
-    .event-when{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-    .event-date{font-size:15px;font-weight:500;opacity:.9;white-space:nowrap;}
-    .event-sep{font-size:12px;opacity:.3;}
-    .event-time-txt{font-size:15px;opacity:.65;white-space:nowrap;}
-    .event-title{font-size:17px;font-weight:500;flex:1;padding-left:10px;}
-    .event-badge{font-size:10px;padding:2px 6px;border-radius:4px;opacity:.7;white-space:nowrap;flex-shrink:0;}
+    .event-when{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+    .event-date-txt{font-size:18px;font-weight:500;opacity:.9;white-space:nowrap;}
+    .event-sep{font-size:14px;opacity:.3;}
+    .event-time-txt{font-size:18px;opacity:.65;white-space:nowrap;}
+    .event-title{font-size:21px;font-weight:500;flex:1;padding-left:12px;}
+    .event-badge{font-size:12px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;flex-shrink:0;}
 
-    /* 4행 */
-    #quote-card{text-align:center;}
-    .quote-text{font-size:16px;line-height:1.65;opacity:.85;}
-    .quote-author{font-size:11px;opacity:.38;margin-top:4px;}
-    #sync-status{font-size:9px;opacity:.28;float:right;}
+    /* 4행: 한마디 */
+    #quote-card{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    .quote-deco{font-size:20px;margin-bottom:4px;}
+    .quote-text{font-size:20px;line-height:1.65;opacity:.88;}
+    .quote-author{font-size:13px;opacity:.38;margin-top:5px;}
+    #sync-status{font-size:10px;opacity:.28;float:right;}
+
+    /* 5행: 날씨/멘트/시설 */
+    #bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;flex:2;}
+    #weather-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    .weather-top{display:flex;flex-direction:column;align-items:center;gap:6px;}
+    .weather-temp{font-size:48px;font-weight:500;line-height:1;}
+    .weather-meta{display:flex;flex-direction:column;gap:3px;align-items:center;}
+    .weather-meta span{font-size:14px;opacity:.6;}
+    #comment-card{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center;}
+    .wcl{font-size:15px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:8px 16px;border-radius:22px;display:inline-block;}
+    #facility-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    .fac-row{display:flex;justify-content:center;align-items:center;padding:7px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:14px;width:100%;}
+    .fac-row:last-child{border-bottom:none;}
+    .fac-name{font-size:15px;white-space:nowrap;}
+    .fac-time{font-size:15px;font-weight:500;opacity:.75;white-space:nowrap;}
+    .closed{opacity:.32;text-decoration:line-through;}
+
+    /* 알림 팝업 */
+    #alert-popup{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(15,22,38,0.94);color:#fff;border-radius:22px;padding:18px 22px;min-width:300px;max-width:520px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.45);cursor:pointer;border:1px solid rgba(255,255,255,0.14);text-align:center;animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes slideUp{from{transform:translateX(-50%) translateY(80px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
+    #alert-popup .al-close{display:block;font-size:11px;opacity:.4;text-align:right;margin-bottom:8px;}
+    #alert-popup .al-title{font-size:12px;opacity:.55;margin-bottom:6px;}
+    #alert-popup .al-countdown{font-size:44px;font-weight:700;letter-spacing:-.5px;line-height:1;margin-bottom:4px;}
+    #alert-popup .al-clock{font-size:17px;opacity:.62;margin-bottom:10px;}
+    #alert-popup .al-event{font-size:15px;opacity:.72;border-top:1px solid rgba(255,255,255,0.12);padding-top:10px;}
+    #alert-popup .al-hint{font-size:11px;opacity:.3;margin-top:8px;}
   </style>
 </head>
 <body>
@@ -90,6 +103,8 @@
 </div>
 
 <div id="dash">
+
+  <!-- 1행: 날짜+시간 -->
   <div id="header-card" class="card">
     <div id="header-center">
       <div id="date-display">로딩 중...</div>
@@ -99,11 +114,31 @@
     <div id="theme-icon">☀️</div>
   </div>
 
-  <div id="middle-row">
+  <!-- 2행: 위클리 캘린더 -->
+  <div id="weekly-card" class="card">
+    <div id="weekly-row"></div>
+  </div>
+
+  <!-- 3행: 다가오는 일정 -->
+  <div id="events-card" class="card">
+    <div class="section-label">다가오는 일정</div>
+    <div id="events-list"><div style="opacity:.4;font-size:16px;padding:6px 0;">불러오는 중...</div></div>
+  </div>
+
+  <!-- 4행: 오늘의 한마디 -->
+  <div id="quote-card" class="card">
+    <div class="section-label">오늘의 한마디 <span id="sync-status"></span></div>
+    <div class="quote-deco">👩‍👧 💕</div>
+    <div class="quote-text" id="quote-text">불러오는 중...</div>
+    <div class="quote-author" id="quote-author"></div>
+  </div>
+
+  <!-- 5행: 날씨 / 멘트 / 시설 -->
+  <div id="bottom-row">
     <div id="weather-card" class="card">
       <div class="section-label">날씨 · 마포구 서교동</div>
       <div class="weather-top">
-        <div id="weather-icon" style="font-size:34px;">🌤</div>
+        <div id="weather-icon" style="font-size:46px;">🌤</div>
         <div class="weather-meta">
           <div class="weather-temp" id="weather-temp">--°</div>
           <span id="weather-desc">확인 중...</span>
@@ -121,82 +156,59 @@
     </div>
   </div>
 
-  <div id="events-card" class="card">
-    <div class="section-label">다가오는 일정</div>
-    <div id="events-list"><div style="opacity:.4;font-size:14px;padding:4px 0;">불러오는 중...</div></div>
-  </div>
-
-  <div id="quote-card" class="card">
-    <div class="section-label">오늘의 한마디 <span id="sync-status"></span></div>
-    <div class="quote-text" id="quote-text">불러오는 중...</div>
-    <div class="quote-author" id="quote-author"></div>
-  </div>
 </div>
 
-<div id="alert-popup" onclick="closeAlert()" style="text-align:center;">
+<div id="alert-popup" onclick="closeAlert()">
   <span class="al-close">탭해서 닫기 ✕</span>
   <div class="al-title">🔔 곧 일정이 있어요</div>
   <div class="al-countdown" id="al-countdown"></div>
   <div class="al-clock" id="al-time-text"></div>
   <div class="al-event" id="al-event-title"></div>
+  <div class="al-hint">탭하면 닫혀요 · 15초 후 자동으로 사라져요</div>
 </div>
 
 <script>
-var FIXED_LAT=37.5546, FIXED_LON=126.9236;
+var FIXED_LAT=37.5546,FIXED_LON=126.9236;
 var SHEET_ID="1Iu8teB0ds5lzNVZwb-V353WnEjzlSU4anMAcMZJ0LY4";
 var OPENSHEET_URL="https://opensheet.elk.sh/"+SHEET_ID+"/%EC%8B%9C%ED%8A%B81";
 var DAYS_KR=["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+var DAYS_SHORT=["일","월","화","수","목","금","토"];
 var MONTHS_KR=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
-
 var FAC={
-  gym:    {name:"🏋 헬스장",hours:{0:"10:00~18:00",1:null,2:"06:00~23:00",3:"06:00~23:00",4:"06:00~23:00",5:"06:00~23:00",6:"06:00~23:00"}},
-  roof:   {name:"🏙 옥상",  hours:{0:"08:00~22:00",1:"08:00~22:00",2:"08:00~22:00",3:"08:00~22:00",4:"08:00~22:00",5:"08:00~22:00",6:"08:00~22:00"}},
+  gym:{name:"🏋 헬스장",hours:{0:"10:00~18:00",1:null,2:"06:00~23:00",3:"06:00~23:00",4:"06:00~23:00",5:"06:00~23:00",6:"06:00~23:00"}},
+  roof:{name:"🏙 옥상",hours:{0:"08:00~22:00",1:"08:00~22:00",2:"08:00~22:00",3:"08:00~22:00",4:"08:00~22:00",5:"08:00~22:00",6:"08:00~22:00"}},
   library:{name:"📚 도서관",hours:{0:null,1:null,2:"10:00~19:00",3:"10:00~19:00",4:"10:00~19:00",5:"10:00~19:00",6:"10:00~18:00"}},
 };
 
-/* ── 테마 정의 (파스텔/부드러운 컬러) ── */
 var THEMES={
-  clearDay:    {bg:"linear-gradient(180deg,#4A90D9 0%,#72AEDE 40%,#A8CFEA 72%,#C8E4F4 100%)",text:"#1A3A58",timeColor:"#2A6AA8",card:"rgba(255,255,255,0.52)"},
-  sunrise:     {bg:"linear-gradient(180deg,#5B6BAE 0%,#A07EB8 30%,#E89878 62%,#F8CFA0 100%)",text:"#2A1840",timeColor:"#7A4080",card:"rgba(255,255,255,0.44)"},
-  sunset:      {bg:"linear-gradient(180deg,#5068A8 0%,#9868A8 28%,#D87868 58%,#F0B080 100%)",text:"#201030",timeColor:"#6838A0",card:"rgba(255,255,255,0.42)"},
+  clearDay:    {bg:"linear-gradient(180deg,#4A90D9 0%,#72AEDE 40%,#A8CFEA 72%,#C8E4F4 100%)",text:"#1A3A58",timeColor:"#2A6AA8",card:"rgba(255,255,255,0.46)"},
+  sunrise:     {bg:"linear-gradient(180deg,#5B6BAE 0%,#A07EB8 30%,#E89878 62%,#F8CFA0 100%)",text:"#2A1840",timeColor:"#7A4080",card:"rgba(255,255,255,0.40)"},
+  sunset:      {bg:"linear-gradient(180deg,#5068A8 0%,#9868A8 28%,#D87868 58%,#F0B080 100%)",text:"#201030",timeColor:"#6838A0",card:"rgba(255,255,255,0.38)"},
   clearNight:  {bg:"linear-gradient(180deg,#1E2C4A 0%,#283C5E 45%,#344D78 100%)",text:"#D8E8FF",timeColor:"#90B0E0",card:"rgba(20,30,55,0.55)"},
   deepNight:   {bg:"linear-gradient(180deg,#141E32 0%,#1A2840 50%,#203050 100%)",text:"#C0D0E8",timeColor:"#7090C0",card:"rgba(12,18,35,0.58)"},
-  partlyCloudy:{bg:"linear-gradient(180deg,#5898C8 0%,#80B4D4 38%,#A8CCDE 72%,#C8DDE8 100%)",text:"#183048",timeColor:"#2A6090",card:"rgba(255,255,255,0.50)"},
-  cloudy:      {bg:"linear-gradient(180deg,#6A8098 0%,#8A9EB0 38%,#A8B8C4 72%,#C0CDD6 100%)",text:"#1E2C38",timeColor:"#3A5870",card:"rgba(255,255,255,0.50)"},
-  foggy:       {bg:"linear-gradient(180deg,#9AAAB2 0%,#B0BEC6 48%,#CDD8DC 100%)",text:"#243038",timeColor:"#485A68",card:"rgba(255,255,255,0.52)"},
+  partlyCloudy:{bg:"linear-gradient(180deg,#5898C8 0%,#80B4D4 38%,#A8CCDE 72%,#C8DDE8 100%)",text:"#183048",timeColor:"#2A6090",card:"rgba(255,255,255,0.46)"},
+  cloudy:      {bg:"linear-gradient(180deg,#6A8098 0%,#8A9EB0 38%,#A8B8C4 72%,#C0CDD6 100%)",text:"#1E2C38",timeColor:"#3A5870",card:"rgba(255,255,255,0.46)"},
+  foggy:       {bg:"linear-gradient(180deg,#9AAAB2 0%,#B0BEC6 48%,#CDD8DC 100%)",text:"#243038",timeColor:"#485A68",card:"rgba(255,255,255,0.48)"},
   drizzle:     {bg:"linear-gradient(180deg,#4A607A 0%,#607888 48%,#7E9098 100%)",text:"#D8E5EE",timeColor:"#90B0C8",card:"rgba(30,42,55,0.52)"},
   rain:        {bg:"linear-gradient(180deg,#344456 0%,#445464 45%,#546475 100%)",text:"#D0DDE8",timeColor:"#7898B8",card:"rgba(22,32,45,0.55)"},
-  snow:        {bg:"linear-gradient(180deg,#8898A8 0%,#A8B8C8 42%,#C8D8E0 72%,#E0EAED 100%)",text:"#1E2E3A",timeColor:"#486078",card:"rgba(255,255,255,0.54)"},
+  snow:        {bg:"linear-gradient(180deg,#8898A8 0%,#A8B8C8 42%,#C8D8E0 72%,#E0EAED 100%)",text:"#1E2E3A",timeColor:"#486078",card:"rgba(255,255,255,0.50)"},
   storm:       {bg:"linear-gradient(180deg,#222C40 0%,#2C3850 45%,#384560 100%)",text:"#C0D0E0",timeColor:"#6888B0",card:"rgba(15,20,35,0.60)"},
 };
 
 function getThemeKey(code,hour){
-  var night=hour<5||hour>=21;
-  var sunrise=hour>=5&&hour<8;
-  var sunset=hour>=18&&hour<21;
-  var deepNight=hour>=23||hour<4;
-  if(code===0||code===1){
-    if(deepNight)return'deepNight';
-    if(night)return'clearNight';
-    if(sunrise)return'sunrise';
-    if(sunset)return'sunset';
-    return'clearDay';
-  }
+  var night=hour<5||hour>=21,sunrise=hour>=5&&hour<8,sunset=hour>=18&&hour<21,deep=hour>=23||hour<4;
+  if(code===0||code===1){if(deep)return'deepNight';if(night)return'clearNight';if(sunrise)return'sunrise';if(sunset)return'sunset';return'clearDay';}
   if(code===2)return night?'cloudy':'partlyCloudy';
   if(code===3)return'cloudy';
   if(code===45||code===48)return'foggy';
   if(code===51||code===53||code===55)return'drizzle';
   if(code===61||code===63||code===65||code===80||code===81||code===82)return'rain';
-  if(code===71||code===73||code===75||code===77||code===85||code===86)return'snow';
+  if(code===71||code===73||code===75||code===77)return'snow';
   if(code===95||code===96||code===99)return'storm';
   return night?'clearNight':'clearDay';
 }
 
-/* ── 씬 관리 ── */
-var currentKey='';
-var animFrame=null;
-var ltTimer=null;
-
+var currentKey='',animFrame=null,ltTimer=null;
 function applyTheme(key){
   var t=THEMES[key]||THEMES.clearDay;
   document.getElementById('bg-wrap').style.background=t.bg;
@@ -210,156 +222,92 @@ function applyTheme(key){
 }
 
 function buildScene(key){
-  var sun=document.getElementById('sun');
-  var moon=document.getElementById('moon');
-  var cw=document.getElementById('clouds-wrap');
-
-  /* 태양 ray 초기화 */
+  var sun=document.getElementById('sun'),moon=document.getElementById('moon'),cw=document.getElementById('clouds-wrap');
   var rays=document.getElementById('sun-rays');
   if(!rays.dataset.built){
     rays.dataset.built='1';
-    for(var i=0;i<12;i++){
-      var ray=document.createElement('div');
-      ray.className='ray';
-      var len=32+(i%3)*12;
-      var total=44+len;
-      ray.style.cssText='height:'+total+'px;width:2px;left:43px;top:'+(44-total)+'px;transform-origin:50% 100%;transform:rotate('+(i*30)+'deg);';
-      rays.appendChild(ray);
-    }
+    for(var i=0;i<12;i++){var ray=document.createElement('div');ray.className='ray';var len=32+(i%3)*12,total=44+len;ray.style.cssText='height:'+total+'px;width:2px;left:43px;top:'+(44-total)+'px;transform-origin:50% 100%;transform:rotate('+(i*30)+'deg);';rays.appendChild(ray);}
   }
-
   sun.style.display=(key==='clearDay'||key==='sunrise')?'block':'none';
   moon.style.display=(key==='clearNight'||key==='deepNight')?'block':'none';
-
-  /* 구름 */
   cw.innerHTML='';
   var cloudKeys=['partlyCloudy','cloudy','drizzle','rain','storm','sunset'];
   if(cloudKeys.indexOf(key)>=0){
-    var count=(key==='cloudy'||key==='rain'||key==='storm')?6:3;
+    var cnt=(key==='cloudy'||key==='rain'||key==='storm')?6:3;
     var dark=(key==='rain'||key==='storm'||key==='drizzle');
-    for(var i=0;i<count;i++){
-      var cl=document.createElement('div');
-      cl.className='cloud';
-      var w=110+Math.random()*160;
-      var h=w*0.36;
-      var top=20+Math.random()*200;
-      var dur=45+Math.random()*55;
-      var delay=-Math.random()*dur;
-      var color=dark?'rgba(35,45,58,0.82)':'rgba(255,255,255,0.78)';
-      cl.style.cssText='width:'+w+'px;height:'+h+'px;top:'+top+'px;background:'+color+';animation-duration:'+dur+'s;animation-delay:'+delay+'s;';
-      cl.innerHTML=
-        '<div style="position:absolute;width:'+(h*1.5)+'px;height:'+(h*1.5)+'px;background:'+color+';border-radius:50%;top:-'+(h*.55)+'px;left:'+(w*.18)+'px;"></div>'+
-        '<div style="position:absolute;width:'+(h*1.2)+'px;height:'+(h*1.2)+'px;background:'+color+';border-radius:50%;top:-'+(h*.38)+'px;left:'+(w*.44)+'px;"></div>';
-      cw.appendChild(cl);
-    }
+    for(var i=0;i<cnt;i++){var cl=document.createElement('div');cl.className='cloud';var w=110+Math.random()*160,h=w*.36,top=20+Math.random()*200,dur=45+Math.random()*55,delay=-Math.random()*dur,color=dark?'rgba(35,45,58,0.82)':'rgba(255,255,255,0.78)';cl.style.cssText='width:'+w+'px;height:'+h+'px;top:'+top+'px;background:'+color+';animation-duration:'+dur+'s;animation-delay:'+delay+'s;';cl.innerHTML='<div style="position:absolute;width:'+(h*1.5)+'px;height:'+(h*1.5)+'px;background:'+color+';border-radius:50%;top:-'+(h*.55)+'px;left:'+(w*.18)+'px;"></div><div style="position:absolute;width:'+(h*1.2)+'px;height:'+(h*1.2)+'px;background:'+color+';border-radius:50%;top:-'+(h*.38)+'px;left:'+(w*.44)+'px;"></div>';cw.appendChild(cl);}
   }
-
-  /* 번개 */
   if(ltTimer){clearInterval(ltTimer);ltTimer=null;}
-  if(key==='storm'){
-    ltTimer=setInterval(function(){
-      if(Math.random()<0.28){
-        var el=document.getElementById('lightning');
-        el.style.background='rgba(200,220,255,0.38)';
-        setTimeout(function(){el.style.background='rgba(200,220,255,0)';},90);
-        setTimeout(function(){
-          if(Math.random()<0.5){el.style.background='rgba(200,220,255,0.22)';setTimeout(function(){el.style.background='rgba(200,220,255,0)';},65);}
-        },180);
-      }
-    },3200);
-  }
+  if(key==='storm'){ltTimer=setInterval(function(){if(Math.random()<0.28){var el=document.getElementById('lightning');el.style.background='rgba(200,220,255,0.38)';setTimeout(function(){el.style.background='rgba(200,220,255,0)';},90);}},3200);}
 }
 
 function startParticles(key){
   if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}
-  var canvas=document.getElementById('bg-canvas');
-  var ctx=canvas.getContext('2d');
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
+  var canvas=document.getElementById('bg-canvas'),ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   var pts=[];
-
   if(key==='rain'||key==='drizzle'||key==='storm'){
     var cnt=key==='drizzle'?75:220;
-    for(var i=0;i<cnt;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,spd:key==='drizzle'?3+Math.random()*3:10+Math.random()*10,len:key==='drizzle'?7+Math.random()*7:14+Math.random()*18,op:0.18+Math.random()*0.38});
-    (function loop(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      pts.forEach(function(p){
-        ctx.beginPath();ctx.lineWidth=1;ctx.globalAlpha=p.op;
-        ctx.strokeStyle='rgba(175,210,255,1)';
-        ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.len*.18,p.y-p.len);ctx.stroke();
-        p.y+=p.spd;p.x+=p.spd*.18;
-        if(p.y>canvas.height){p.y=-20;p.x=Math.random()*canvas.width;}
-      });
-      ctx.globalAlpha=1;
-      animFrame=requestAnimationFrame(loop);
-    })();
+    for(var i=0;i<cnt;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,spd:key==='drizzle'?3+Math.random()*3:10+Math.random()*10,len:key==='drizzle'?7+Math.random()*7:14+Math.random()*18,op:.18+Math.random()*.38});
+    (function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);pts.forEach(function(p){ctx.beginPath();ctx.lineWidth=1;ctx.globalAlpha=p.op;ctx.strokeStyle='rgba(175,210,255,1)';ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.len*.18,p.y-p.len);ctx.stroke();p.y+=p.spd;p.x+=p.spd*.18;if(p.y>canvas.height){p.y=-20;p.x=Math.random()*canvas.width;}});ctx.globalAlpha=1;animFrame=requestAnimationFrame(loop);})();
   } else if(key==='snow'){
     for(var i=0;i<130;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:1.5+Math.random()*3.5,spd:.4+Math.random()*1.2,dr:(Math.random()-.5)*.25,op:.55+Math.random()*.45,a:Math.random()*Math.PI*2});
-    (function loop(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      pts.forEach(function(p){
-        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,255,255,'+p.op+')';ctx.fill();
-        p.y+=p.spd;p.a+=.018;p.x+=Math.sin(p.a)*p.dr;
-        if(p.y>canvas.height){p.y=-8;p.x=Math.random()*canvas.width;}
-      });
-      animFrame=requestAnimationFrame(loop);
-    })();
+    (function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);pts.forEach(function(p){ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+p.op+')';ctx.fill();p.y+=p.spd;p.a+=.018;p.x+=Math.sin(p.a)*p.dr;if(p.y>canvas.height){p.y=-8;p.x=Math.random()*canvas.width;}});animFrame=requestAnimationFrame(loop);})();
   } else if(key==='clearNight'||key==='deepNight'){
     for(var i=0;i<110;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height*.72,r:.4+Math.random()*1.6,base:.25+Math.random()*.75,spd:.008+Math.random()*.025,off:Math.random()*Math.PI*2});
-    var t=0;
-    (function loop(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      t+=.018;
-      pts.forEach(function(p){
-        var op=p.base*(.5+.5*Math.sin(t*p.spd*60+p.off));
-        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,252,230,'+op+')';ctx.fill();
-      });
-      animFrame=requestAnimationFrame(loop);
-    })();
-  } else if(key==='foggy'){
-    /* 안개: 천천히 흐르는 반투명 레이어 */
-    var fogY=0;
-    (function loop(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      var grad=ctx.createLinearGradient(0,0,canvas.width,0);
-      grad.addColorStop(0,'rgba(200,210,215,0)');
-      grad.addColorStop((.3+Math.sin(fogY*.02)*.2),'rgba(200,210,215,0.12)');
-      grad.addColorStop(1,'rgba(200,210,215,0)');
-      ctx.fillStyle=grad;ctx.fillRect(0,0,canvas.width,canvas.height);
-      fogY+=.3;
-      animFrame=requestAnimationFrame(loop);
-    })();
+    var t=0;(function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);t+=.018;pts.forEach(function(p){var op=p.base*(.5+.5*Math.sin(t*p.spd*60+p.off));ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(255,252,230,'+op+')';ctx.fill();});animFrame=requestAnimationFrame(loop);})();
   }
 }
 
-/* ── 유틸 ── */
 function to12h(ts){var h=parseInt(ts.slice(0,2)),m=ts.slice(3,5);return(h<12?'오전':'오후')+' '+(h%12||12)+':'+m;}
 function facTime(t){if(!t)return'휴무';var p=t.split('~');return p.length===2?to12h(p[0])+' ~ '+to12h(p[1]):t;}
+
+/* ── 위클리 캘린더 ── */
+var currentEventDates=[];
+function buildWeekly(){
+  var now=new Date();
+  var dow=now.getDay();
+  var monday=new Date(now);
+  monday.setDate(now.getDate()-((dow+6)%7));
+  var row=document.getElementById('weekly-row');
+  row.innerHTML='';
+  for(var i=0;i<7;i++){
+    var d=new Date(monday);
+    d.setDate(monday.getDate()+i);
+    var isToday=d.toDateString()===now.toDateString();
+    var dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var hasEvent=currentEventDates.indexOf(dateStr)>=0;
+    var div=document.createElement('div');
+    div.className='week-day'+(isToday?' today':'')+(hasEvent?' has-event':'');
+    var dotColor=isToday?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.6)';
+    div.innerHTML=
+      '<span class="week-day-name">'+DAYS_SHORT[d.getDay()]+'</span>'+
+      '<span class="week-date">'+(d.getMonth()+1)+'/'+d.getDate()+'</span>'+
+      '<span class="week-dot" style="background:'+dotColor+';"></span>';
+    row.appendChild(div);
+  }
+}
 
 function updateClock(){
   var now=new Date(),h=now.getHours();
   document.getElementById('time-display').textContent=' '+to12h(String(h).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
   document.getElementById('date-display').textContent=now.getFullYear()+'년 '+MONTHS_KR[now.getMonth()]+' '+now.getDate()+'일 '+DAYS_KR[now.getDay()];
+  document.getElementById('theme-icon').textContent=THEMES[currentKey]?'':' ';
 }
 
 function loadFacility(){
   var dow=new Date().getDay();
-  document.getElementById('facility-list').innerHTML=['gym','roof','library'].map(function(k){
-    var f=FAC[k],t=f.hours[dow];
-    return'<div class="fac-row"><span class="fac-name'+(!t?' closed':'')+'">'+f.name+'</span><span class="fac-time'+(!t?' closed':'')+'">'+facTime(t)+'</span></div>';
-  }).join('');
+  document.getElementById('facility-list').innerHTML=['gym','roof','library'].map(function(k){var f=FAC[k],t=f.hours[dow];return'<div class="fac-row"><span class="fac-name'+(!t?' closed':'')+'">'+f.name+'</span><span class="fac-time'+(!t?' closed':'')+'">'+facTime(t)+'</span></div>';}).join('');
 }
 
-function renderEvents(events){ currentEvents = events;
+function renderEvents(events){
   var list=document.getElementById('events-list');
-  var now=new Date();
-  var todayMid=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  var todayStr=now.toISOString().slice(0,10);
+  var now=new Date(),todayMid=new Date(now.getFullYear(),now.getMonth(),now.getDate()),todayStr=now.toISOString().slice(0,10);
+  currentEventDates=events.map(function(e){return e.date;});
+  buildWeekly();
   var sorted=events.filter(function(e){return e.date>=todayStr;}).sort(function(a,b){return(a.date+a.time).localeCompare(b.date+b.time);}).slice(0,4);
-  if(!sorted.length){list.innerHTML='<div style="opacity:.4;font-size:14px;padding:4px 0;">다가오는 일정이 없어요 😊</div>';return;}
+  if(!sorted.length){list.innerHTML='<div style="opacity:.4;font-size:17px;padding:6px 0;">다가오는 일정이 없어요 😊</div>';return;}
   list.innerHTML=sorted.map(function(ev){
     var evDate=new Date(ev.date+'T'+ev.time);
     var diff=Math.round((new Date(evDate.getFullYear(),evDate.getMonth(),evDate.getDate())-todayMid)/86400000);
@@ -368,36 +316,24 @@ function renderEvents(events){ currentEvents = events;
     var mo=parseInt(ev.date.slice(5,7)),d=parseInt(ev.date.slice(8,10));
     var bc=ev.type==='repeat'?'rgba(121,134,203,0.28)':'rgba(100,180,120,0.22)';
     var bt=ev.type==='repeat'?'🔁 '+ev.note:'1회';
-    return'<div class="event-item"><div class="event-dday '+dc+'">'+dt+'</div>'+
-      '<div class="event-when"><span class="event-date">'+mo+'월 '+d+'일 ('+DAYS_KR[evDate.getDay()]+')</span>'+
-      '<span class="event-sep">·</span><span class="event-time-txt">'+to12h(ev.time)+'</span></div>'+
-      '<span class="event-title">'+ev.title+'</span>'+
-      '<span class="event-badge" style="background:'+bc+';">'+bt+'</span></div>';
+    return'<div class="event-item"><div class="event-dday '+dc+'">'+dt+'</div><div class="event-when"><span class="event-date-txt">'+mo+'월 '+d+'일 ('+DAYS_KR[evDate.getDay()]+')</span><span class="event-sep">·</span><span class="event-time-txt">'+to12h(ev.time)+'</span></div><span class="event-title">'+ev.title+'</span><span class="event-badge" style="background:'+bc+';">'+bt+'</span></div>';
   }).join('');
 }
 
 function fetchSheetData(){
   fetch(OPENSHEET_URL).then(function(r){return r.json();}).then(function(rows){
-    var data={};
-    rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
+    var data={};rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
     document.getElementById('quote-text').textContent='\u201C'+(data['quote']||'오늘 하루도 충분히 잘하고 있어요.')+'\u201D';
     document.getElementById('quote-author').textContent=data['author']?'— '+data['author']:'';
     var events=[];
-    for(var i=1;i<=10;i++){
-      if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){
-        var rep=data['event'+i+'_repeat']||'';
-        events.push({date:data['event'+i+'_date'],time:data['event'+i+'_time'],title:data['event'+i+'_title'],type:rep?'repeat':'one-time',note:rep});
-      }
-    }
+    for(var i=1;i<=10;i++){if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){var rep=data['event'+i+'_repeat']||'';events.push({date:data['event'+i+'_date'],time:data['event'+i+'_time'],title:data['event'+i+'_title'],type:rep?'repeat':'one-time',note:rep});}}
     renderEvents(events);
     var now=new Date();
     document.getElementById('sync-status').textContent=to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨';
-  }).catch(function(){
-    document.getElementById('quote-text').textContent='\u201C오늘 하루도 충분히 잘하고 있어요.\u201D';
-    document.getElementById('sync-status').textContent='오프라인';
-  });
+  }).catch(function(){document.getElementById('quote-text').textContent='\u201C오늘 하루도 충분히 잘하고 있어요.\u201D';document.getElementById('sync-status').textContent='오프라인';});
 }
 
+/* ── 날씨 ── */
 function makeComments(cur,high,low,maxP,aftP){
   var lines=[],diff=high-low,h=new Date().getHours();
   if(maxP>=70)lines.push('☂️ 우산 꼭 챙겨요!');
@@ -419,125 +355,66 @@ function loadWeather(){
   fetch('https://api.open-meteo.com/v1/forecast?latitude='+FIXED_LAT+'&longitude='+FIXED_LON+'&current=temperature_2m,apparent_temperature,weather_code&hourly=precipitation_probability&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=1')
     .then(function(r){return r.json();})
     .then(function(data){
-      var cur=Math.round(data.current.temperature_2m);
-      var feels=Math.round(data.current.apparent_temperature);
-      var code=data.current.weather_code;
-      var high=Math.round(data.daily.temperature_2m_max[0]);
-      var low=Math.round(data.daily.temperature_2m_min[0]);
+      var cur=Math.round(data.current.temperature_2m),feels=Math.round(data.current.apparent_temperature),code=data.current.weather_code;
+      var high=Math.round(data.daily.temperature_2m_max[0]),low=Math.round(data.daily.temperature_2m_min[0]);
       var probs=(data.hourly&&data.hourly.precipitation_probability)||[];
-      var maxP=Math.max.apply(null,probs.slice(0,24));
-      var aftP=Math.max.apply(null,probs.slice(12,18));
+      var maxP=Math.max.apply(null,probs.slice(0,24)),aftP=Math.max.apply(null,probs.slice(12,18));
       var icons={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',53:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',80:'🌦️',95:'⛈️'};
       var descs={0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',51:'이슬비',53:'이슬비',61:'비',63:'비',65:'강한 비',71:'눈',80:'소나기',95:'뇌우'};
       document.getElementById('weather-icon').textContent=icons[code]||'🌡️';
       document.getElementById('weather-temp').textContent=cur+'°';
       document.getElementById('weather-desc').textContent=(descs[code]||'')+'  최고 '+high+'° / 최저 '+low+'°';
       document.getElementById('weather-feels').textContent='체감 '+feels+'°';
-      var comments=makeComments(cur,high,low,maxP,aftP);
-      document.getElementById('weather-comments').innerHTML=comments.map(function(c){return'<span class="wcl">'+c+'</span>';}).join('');
-      applyTheme(getThemeKey(code,new Date().getHours()));
+      document.getElementById('weather-comments').innerHTML=makeComments(cur,high,low,maxP,aftP).map(function(c){return'<span class="wcl">'+c+'</span>';}).join('');
+      var key=getThemeKey(code,new Date().getHours());
+      applyTheme(key);
       document.getElementById('theme-icon').textContent=icons[code]||'🌡️';
     }).catch(function(){applyTheme(getThemeKey(0,new Date().getHours()));});
 }
 
-/* ── 초기화 ── */
-applyTheme(getThemeKey(0,new Date().getHours()));
-updateClock();
-loadFacility();
-loadWeather();
-fetchSheetData();
 /* ── 알림 ── */
-var notifiedEvents = {};
-var currentEvents = [];
-
-function playChime() {
-  try {
-    var ac = new (window.AudioContext || window.webkitAudioContext)();
-    var melody = [
-      [523, 0.00, 0.45, 0.18],
-      [659, 0.38, 0.35, 0.18],
-      [784, 0.68, 0.35, 0.18],
-      [1047,0.96, 0.65, 0.20],
-      [1319,1.54, 0.32, 0.16],
-      [1047,1.80, 0.32, 0.18],
-      [880, 2.06, 0.42, 0.18],
-      [784, 2.44, 0.55, 0.18],
-      [659, 2.92, 0.30, 0.16],
-      [784, 3.16, 0.30, 0.18],
-      [880, 3.40, 0.32, 0.18],
-      [1047,3.65, 0.72, 0.20],
-      [880, 4.30, 0.30, 0.16],
-      [784, 4.55, 0.38, 0.16],
-      [659, 4.87, 0.32, 0.16],
-      [523, 5.12, 1.00, 0.18],
-    ];
-    melody.forEach(function(n) {
-      var freq=n[0], st=n[1], dur=n[2], vol=n[3];
-      var osc=ac.createOscillator(), g=ac.createGain();
-      osc.connect(g); g.connect(ac.destination);
-      osc.frequency.value=freq; osc.type='sine';
-      var t=ac.currentTime+st;
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(vol,t+0.05);
-      g.gain.setValueAtTime(vol,t+dur*0.55);
-      g.gain.exponentialRampToValueAtTime(0.001,t+dur+0.25);
-      osc.start(t); osc.stop(t+dur+0.3);
-      var osc2=ac.createOscillator(), g2=ac.createGain();
-      osc2.connect(g2); g2.connect(ac.destination);
-      osc2.frequency.value=freq*2; osc2.type='triangle';
-      g2.gain.setValueAtTime(0,t);
-      g2.gain.linearRampToValueAtTime(vol*0.07,t+0.04);
-      g2.gain.exponentialRampToValueAtTime(0.001,t+dur*0.45);
-      osc2.start(t); osc2.stop(t+dur*0.5);
-    });
-  } catch(e) {}
+var notifiedEvents={},currentEvents=[];
+function playChime(){
+  try{
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    var melody=[[523,0.00,0.45,0.18],[659,0.38,0.35,0.18],[784,0.68,0.35,0.18],[1047,0.96,0.65,0.20],[1319,1.54,0.32,0.16],[1047,1.80,0.32,0.18],[880,2.06,0.42,0.18],[784,2.44,0.55,0.18],[659,2.92,0.30,0.16],[784,3.16,0.30,0.18],[880,3.40,0.32,0.18],[1047,3.65,0.72,0.20],[880,4.30,0.30,0.16],[784,4.55,0.38,0.16],[659,4.87,0.32,0.16],[523,5.12,1.00,0.18]];
+    melody.forEach(function(n){var osc=ac.createOscillator(),g=ac.createGain();osc.connect(g);g.connect(ac.destination);osc.frequency.value=n[0];osc.type='sine';var t=ac.currentTime+n[1];g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(n[3],t+0.05);g.gain.setValueAtTime(n[3],t+n[2]*.55);g.gain.exponentialRampToValueAtTime(0.001,t+n[2]+0.25);osc.start(t);osc.stop(t+n[2]+0.3);var o2=ac.createOscillator(),g2=ac.createGain();o2.connect(g2);g2.connect(ac.destination);o2.frequency.value=n[0]*2;o2.type='triangle';g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(n[3]*0.07,t+0.04);g2.gain.exponentialRampToValueAtTime(0.001,t+n[2]*.45);o2.start(t);o2.stop(t+n[2]*.5);});
+  }catch(e){}
 }
-
-function closeAlert() {
-  document.getElementById('alert-popup').style.display = 'none';
-}
-
-function checkAlerts() {
-  var now = new Date();
-  var todayStr = now.toISOString().slice(0,10);
-  currentEvents.forEach(function(ev) {
-    if (ev.date < todayStr) return;
-    var evTime = new Date(ev.date + 'T' + ev.time);
-    var diffMin = (evTime - now) / 60000;
-    var key30 = ev.date + ev.time + '_30';
-    var key10 = ev.date + ev.time + '_10';
-    var triggerKey = null;
-    var label = '';
-    if (diffMin > 0 && diffMin <= 30 && diffMin > 29 && !notifiedEvents[key30]) {
-      triggerKey = key30; label = '30분 후';
-    } else if (diffMin > 0 && diffMin <= 10 && diffMin > 9 && !notifiedEvents[key10]) {
-      triggerKey = key10; label = '10분 후';
-    }
-    if (triggerKey) {
-      notifiedEvents[triggerKey] = true;
-      var minsLeft = Math.round(diffMin);
-      document.getElementById('al-countdown').textContent = minsLeft + '분 후';
-      document.getElementById('al-time-text').textContent = to12h(ev.time);
-      document.getElementById('al-event-title').textContent = ev.title;
-      var popup = document.getElementById('alert-popup');
-      popup.style.display = 'block';
-      popup.style.animation = 'none';
-      popup.offsetHeight;
-      popup.style.animation = 'slideUp .4s cubic-bezier(.34,1.56,.64,1)';
+function closeAlert(){document.getElementById('alert-popup').style.display='none';}
+function checkAlerts(){
+  var now=new Date(),todayStr=now.toISOString().slice(0,10);
+  currentEvents.forEach(function(ev){
+    if(ev.date<todayStr)return;
+    var evTime=new Date(ev.date+'T'+ev.time),diffMin=(evTime-now)/60000;
+    var k30=ev.date+ev.time+'_30',k10=ev.date+ev.time+'_10';
+    var trigKey=null,minsLeft=0;
+    if(diffMin>0&&diffMin<=30&&diffMin>29&&!notifiedEvents[k30]){trigKey=k30;minsLeft=30;}
+    else if(diffMin>0&&diffMin<=10&&diffMin>9&&!notifiedEvents[k10]){trigKey=k10;minsLeft=10;}
+    if(trigKey){
+      notifiedEvents[trigKey]=true;
+      document.getElementById('al-countdown').textContent=minsLeft+'분 후';
+      document.getElementById('al-time-text').textContent=to12h(ev.time);
+      document.getElementById('al-event-title').textContent=ev.title;
+      var popup=document.getElementById('alert-popup');
+      popup.style.display='block';popup.style.animation='none';popup.offsetHeight;popup.style.animation='slideUp .4s cubic-bezier(.34,1.56,.64,1)';
       playChime();
-      setTimeout(closeAlert, 15000);
+      setTimeout(closeAlert,15000);
     }
   });
 }
 
+applyTheme(getThemeKey(0,new Date().getHours()));
+buildWeekly();
+updateClock();
+loadFacility();
+loadWeather();
+fetchSheetData();
 setInterval(updateClock,10000);
 setInterval(fetchSheetData,30000);
 setInterval(loadWeather,600000);
-setInterval(checkAlerts, 30000);
-window.addEventListener('resize',function(){
-  var c=document.getElementById('bg-canvas');
-  c.width=window.innerWidth;c.height=window.innerHeight;
-});
+setInterval(checkAlerts,30000);
+window.addEventListener('resize',function(){var c=document.getElementById('bg-canvas');c.width=window.innerWidth;c.height=window.innerHeight;});
 </script>
 </body>
 </html>
