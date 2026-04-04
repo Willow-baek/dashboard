@@ -245,23 +245,24 @@
     opacity:0;
   }
 }
-    .confetti-item{
+.confetti-item{
   position:fixed;
-  bottom:20px;
+  bottom:0;
+  left:50%;
   font-size:26px;
-  animation:confettiBurst 1.4s ease-out forwards;
+  animation:confettiPop 1s ease-out forwards;
 }
 
-@keyframes confettiBurst{
+@keyframes confettiPop{
   0%{
-    transform:translate(0,0) scale(.7) rotate(0deg);
+    transform:translate(-50%,0) scale(.8);
     opacity:0;
   }
   10%{
     opacity:1;
   }
   100%{
-    transform:translate(var(--dx), var(--dy)) scale(1.15) rotate(260deg);
+    transform:translate(var(--x), -140px) scale(1.2);
     opacity:0;
   }
 }
@@ -800,11 +801,8 @@ function logAction(action, clickedButton) {
 markButtonDone(action);
 popEmojiFromButton(clickedButton, getActionEmoji(action));
 
-if(Math.random() < 0.5){
-  burstCelebration(action);
-}else{
-  burstConfetti(action);
-}
+burstCelebration(action);
+// burstConfetti(action);
 
 playSuccessMagic();
 showToast(action + " 기록 완료!");
