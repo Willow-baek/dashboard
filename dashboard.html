@@ -20,7 +20,7 @@
     #moon{position:absolute;width:62px;height:62px;border-radius:50%;background:#e8e2cc;box-shadow:0 0 18px rgba(220,210,175,0.55),inset -14px -4px 0 rgba(0,0,0,0.22);top:58px;right:125px;display:none;}
     .cloud{position:absolute;border-radius:60px;animation:cloudDrift linear infinite;}
     @keyframes cloudDrift{from{transform:translateX(-160%)}to{transform:translateX(calc(100vw + 160%))}}
-    #dash{position:relative;z-index:2;width:100%;height:100vh;padding:0.4rem;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;gap:0.35rem;overflow:hidden;transition:color 2.5s ease;}
+    #dash{position:relative;z-index:2;width:100%;height:100vh;height:-webkit-fill-available;padding:0.4rem;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;gap:0.35rem;overflow:hidden;transition:color 2.5s ease;}
     .card{border-radius:16px;padding:0.6rem 1rem;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:background 2.5s ease;}
     .section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;margin-bottom:4px;}
 
@@ -179,6 +179,12 @@
 var FIXED_LAT=37.5546,FIXED_LON=126.9236;
 var SHEET_ID="1Iu8teB0ds5lzNVZwb-V353WnEjzlSU4anMAcMZJ0LY4";
 var OPENSHEET_URL="https://opensheet.elk.sh/"+SHEET_ID+"/%EC%8B%9C%ED%8A%B81";
+var HOLIDAYS_2026={
+  '2026-01-01':'신정','2026-01-28':'설연휴','2026-01-29':'설날','2026-01-30':'설연휴',
+  '2026-03-01':'삼일절','2026-05-05':'어린이날','2026-05-25':'부처님오신날',
+  '2026-06-06':'현충일','2026-08-15':'광복절','2026-10-03':'개천절',
+  '2026-10-04':'추석','2026-10-05':'추석연휴','2026-10-09':'한글날','2026-12-25':'성탄절',
+};
 var DAYS_KR=["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
 var DAYS_SHORT=["일","월","화","수","목","금","토"];
 var MONTHS_KR=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
@@ -286,13 +292,21 @@ function buildWeekly(){
     var isToday=d.toDateString()===now.toDateString();
     var dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     var hasEvent=currentEventDates.indexOf(dateStr)>=0;
+    var holiday=HOLIDAYS_2026[dateStr]||'';
+    var isSat=d.getDay()===6;
+    var isSun=d.getDay()===0;
+    var isRed=isSun||!!holiday;
+    var dayNameColor=isRed?'color:rgba(255,90,90,0.95);':isSat?'color:rgba(80,170,255,0.95);':'';
+    var bottom='';
+    if(hasEvent) bottom='<span class="week-dot" style="background:#FFD700;opacity:1;"></span>';
+    else if(holiday) bottom='<span style="font-size:8px;opacity:.75;'+(isRed?'color:rgba(255,100,100,.9)':'')+';line-height:1;display:block;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;">'+holiday+'</span>';
+    else bottom='<span class="week-dot"></span>';
     var div=document.createElement('div');
-    div.className='week-day'+(isToday?' today':'')+(hasEvent?' has-event':'');
-    var dotColor=isToday?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.6)';
+    div.className='week-day'+(isToday?' today':'');
     div.innerHTML=
-      '<span class="week-day-name">'+DAYS_SHORT[d.getDay()]+'</span>'+
+      '<span class="week-day-name" style="'+dayNameColor+'">'+DAYS_SHORT[d.getDay()]+'</span>'+
       '<span class="week-date">'+(d.getMonth()+1)+'/'+d.getDate()+'</span>'+
-      '<span class="week-dot" style="background:'+dotColor+';"></span>';
+      bottom;
     row.appendChild(div);
   }
 }
@@ -377,7 +391,11 @@ function loadWeather(){
       var key=getThemeKey(code,new Date().getHours());
       applyTheme(key);
       document.getElementById('theme-icon').textContent=icons[code]||'🌡️';
-    }).catch(function(){applyTheme(getThemeKey(0,new Date().getHours()));});
+    }).catch(function(){function fixHeight(){document.getElementById('dash').style.height=window.innerHeight+'px';}
+fixHeight();
+window.addEventListener('resize',fixHeight);
+window.addEventListener('orientationchange',function(){setTimeout(fixHeight,300);});
+applyTheme(getThemeKey(0,new Date().getHours()));});
 }
 
 /* ── 알림 ── */
@@ -412,6 +430,10 @@ function checkAlerts(){
   });
 }
 
+function fixHeight(){document.getElementById('dash').style.height=window.innerHeight+'px';}
+fixHeight();
+window.addEventListener('resize',fixHeight);
+window.addEventListener('orientationchange',function(){setTimeout(fixHeight,300);});
 applyTheme(getThemeKey(0,new Date().getHours()));
 buildWeekly();
 updateClock();
