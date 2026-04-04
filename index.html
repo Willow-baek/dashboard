@@ -783,26 +783,25 @@ function logAction(action, clickedButton) {
     return { ok: res.ok, status: res.status, text: text };
   });
 })
-.then(function(result) {
-  clickedButton.classList.remove('saving');
-  console.log("response:", result);
-
-  if (!result.ok) {
-    showToast("기록 실패: " + result.status);
-    return;
-  }
-
+// ✅ 먼저 UI 즉시 실행
 markButtonDone(action);
 popEmojiFromButton(clickedButton, getActionEmoji(action));
 
 if(Math.random() < 0.5){
-  burstCelebration(action);   // 위에서 내리는 타입
+  burstCelebration(action);
 }else{
-  burstConfetti(action);      // 아래에서 팡 터지는 타입
+  burstConfetti(action);
 }
 
 playSuccessMagic();
 showToast(action + " 기록 완료!");
+
+// ✅ 서버 저장
+.then(function(res) {
+  return res.text();
+})
+.then(function() {
+  clickedButton.classList.remove('saving');
 })
 .catch(function(err) {
   clickedButton.classList.remove('saving');
