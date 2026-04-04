@@ -20,8 +20,21 @@
     #moon{position:absolute;width:62px;height:62px;border-radius:50%;background:#e8e2cc;box-shadow:0 0 18px rgba(220,210,175,0.55),inset -14px -4px 0 rgba(0,0,0,0.22);top:58px;right:125px;display:none;}
     .cloud{position:absolute;border-radius:60px;animation:cloudDrift linear infinite;}
     @keyframes cloudDrift{from{transform:translateX(-160%)}to{transform:translateX(calc(100vw + 160%))}}
-    #dash{position:relative;z-index:2;width:100%;height:100vh;height:-webkit-fill-available;padding:0.4rem;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;display:flex;flex-direction:column;gap:0.35rem;overflow:hidden;transition:color 2.5s ease;}
-    .card{border-radius:16px;padding:0.6rem 1rem;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:background 2.5s ease;}
+#dash{
+  position:relative;
+  z-index:2;
+  width:100%;
+  height:100vh;
+  height:-webkit-fill-available;
+  padding:0.8rem 0.4rem 1.2rem;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:0.35rem;
+  overflow:hidden;
+  transition:color 2.5s ease;
+}
     .section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;margin-bottom:4px;}
 
     /* 1행: 날짜+시간 */
