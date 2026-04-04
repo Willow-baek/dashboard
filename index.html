@@ -71,32 +71,35 @@
     .week-day.has-event .week-dot{opacity:.75;}
 
     /* 3행: 다가오는 일정 */
-    #events-card{flex:0 0 auto;max-height:190px;overflow:hidden;}
-   .event-title{
-  font-size:21px;
-  font-weight:500;
-  flex:0 1 auto;
-  padding-left:6px;
+  #events-card{flex:0 0 auto;max-height:190px;overflow:hidden;}
+
+.event-item:last-child{border-bottom:none;}
+
+.event-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:6px 8px;
+  border-bottom:1px solid rgba(128,128,128,.12);
 }
-   .event-item:last-child{border-bottom:none;}
+
+.event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
+.dday-today{background:rgba(200,0,0,.16);color:#c00;}
+.dday-soon{background:rgba(200,0,0,.12);color:#c00;}
+.dday-later{background:rgba(128,128,128,.15);}
+.event-when{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.event-date-txt{font-size:18px;font-weight:500;opacity:.9;white-space:nowrap;}
+.event-sep{font-size:14px;opacity:.3;}
+.event-time-txt{font-size:18px;opacity:.65;white-space:nowrap;}
 
 .event-title{
   font-size:21px;
   font-weight:500;
-  flex:0 1 auto;
-  padding-left:6px;
+  flex:1;
+  padding-left:8px;
 }
-    .event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
-    .dday-today{background:rgba(200,0,0,.16);color:#c00;}
-    .dday-soon{background:rgba(200,0,0,.12);color:#c00;}
-    .dday-later{background:rgba(128,128,128,.15);}
-    .event-when{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-    .event-date-txt{font-size:18px;font-weight:500;opacity:.9;white-space:nowrap;}
-    .event-sep{font-size:14px;opacity:.3;}
-    .event-time-txt{font-size:18px;opacity:.65;white-space:nowrap;}
-.event-title{font-size:21px;font-weight:500;flex:0 1 auto;padding-left:6px;}
-    .event-badge{font-size:12px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;flex-shrink:0;}
 
+.event-badge{font-size:12px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;flex-shrink:0;}
     /* 4행: 한마디 */
     #quote-card{flex:.5;padding:.3rem 0.7rem;display:flex;flex-direction:column;justify-content:center;}
     .quote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
