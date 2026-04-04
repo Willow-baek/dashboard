@@ -44,15 +44,15 @@
 
     /* 2행 3칸 */
     #middle-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;flex-shrink:0;}
-    #weather-card{display:flex;flex-direction:column;justify-content:center;}
-    .weather-top{display:flex;align-items:center;gap:10px;}
+    #weather-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    .weather-top{display:flex;flex-direction:column;align-items:center;gap:6px;}
     .weather-temp{font-size:36px;font-weight:500;line-height:1;}
     .weather-meta{display:flex;flex-direction:column;gap:2px;}
     .weather-meta span{font-size:12px;opacity:.6;}
-    #comment-card{display:flex;flex-direction:column;justify-content:center;gap:6px;}
+    #comment-card{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center;}
     .wcl{font-size:13px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:6px 12px;border-radius:20px;display:inline-block;align-self:flex-start;}
-    #facility-card{display:flex;flex-direction:column;justify-content:center;}
-    .fac-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:6px;}
+    #facility-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+    .fac-row{display:flex;justify-content:center;align-items:center;padding:5px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:12px;width:100%;}
     .fac-row:last-child{border-bottom:none;}
     .fac-name{font-size:13px;white-space:nowrap;}
     .fac-time{font-size:13px;font-weight:500;opacity:.75;white-space:nowrap;}
@@ -74,7 +74,7 @@
     .event-badge{font-size:10px;padding:2px 6px;border-radius:4px;opacity:.7;white-space:nowrap;flex-shrink:0;}
 
     /* 4행 */
-    #quote-card{}
+    #quote-card{text-align:center;}
     .quote-text{font-size:16px;line-height:1.65;opacity:.85;}
     .quote-author{font-size:11px;opacity:.38;margin-top:4px;}
     #sync-status{font-size:9px;opacity:.28;float:right;}
@@ -133,11 +133,12 @@
   </div>
 </div>
 
-<div id="alert-popup" onclick="closeAlert()">
+<div id="alert-popup" onclick="closeAlert()" style="text-align:center;">
   <span class="al-close">탭해서 닫기 ✕</span>
   <div class="al-title">🔔 곧 일정이 있어요</div>
+  <div class="al-countdown" id="al-countdown"></div>
+  <div class="al-clock" id="al-time-text"></div>
   <div class="al-event" id="al-event-title"></div>
-  <div class="al-time" id="al-time-text"></div>
 </div>
 
 <script>
@@ -451,19 +452,43 @@ var currentEvents = [];
 
 function playChime() {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var notes = [523, 659, 784, 1047];
-    notes.forEach(function(freq, i) {
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      var t = ctx.currentTime + i * 0.18;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.22, t + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-      osc.start(t); osc.stop(t + 0.5);
+    var ac = new (window.AudioContext || window.webkitAudioContext)();
+    var melody = [
+      [523, 0.00, 0.45, 0.18],
+      [659, 0.38, 0.35, 0.18],
+      [784, 0.68, 0.35, 0.18],
+      [1047,0.96, 0.65, 0.20],
+      [1319,1.54, 0.32, 0.16],
+      [1047,1.80, 0.32, 0.18],
+      [880, 2.06, 0.42, 0.18],
+      [784, 2.44, 0.55, 0.18],
+      [659, 2.92, 0.30, 0.16],
+      [784, 3.16, 0.30, 0.18],
+      [880, 3.40, 0.32, 0.18],
+      [1047,3.65, 0.72, 0.20],
+      [880, 4.30, 0.30, 0.16],
+      [784, 4.55, 0.38, 0.16],
+      [659, 4.87, 0.32, 0.16],
+      [523, 5.12, 1.00, 0.18],
+    ];
+    melody.forEach(function(n) {
+      var freq=n[0], st=n[1], dur=n[2], vol=n[3];
+      var osc=ac.createOscillator(), g=ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.frequency.value=freq; osc.type='sine';
+      var t=ac.currentTime+st;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol,t+0.05);
+      g.gain.setValueAtTime(vol,t+dur*0.55);
+      g.gain.exponentialRampToValueAtTime(0.001,t+dur+0.25);
+      osc.start(t); osc.stop(t+dur+0.3);
+      var osc2=ac.createOscillator(), g2=ac.createGain();
+      osc2.connect(g2); g2.connect(ac.destination);
+      osc2.frequency.value=freq*2; osc2.type='triangle';
+      g2.gain.setValueAtTime(0,t);
+      g2.gain.linearRampToValueAtTime(vol*0.07,t+0.04);
+      g2.gain.exponentialRampToValueAtTime(0.001,t+dur*0.45);
+      osc2.start(t); osc2.stop(t+dur*0.5);
     });
   } catch(e) {}
 }
@@ -490,8 +515,10 @@ function checkAlerts() {
     }
     if (triggerKey) {
       notifiedEvents[triggerKey] = true;
+      var minsLeft = Math.round(diffMin);
+      document.getElementById('al-countdown').textContent = minsLeft + '분 후';
+      document.getElementById('al-time-text').textContent = to12h(ev.time);
       document.getElementById('al-event-title').textContent = ev.title;
-      document.getElementById('al-time-text').textContent = label + ' · ' + to12h(ev.time);
       var popup = document.getElementById('alert-popup');
       popup.style.display = 'block';
       popup.style.animation = 'none';
