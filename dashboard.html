@@ -25,10 +25,10 @@
     .section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;margin-bottom:4px;}
 
     /* 1행: 날짜+시간 */
-    #header-card{display:flex;justify-content:center;align-items:center;flex-shrink:0;position:relative;}
+    #header-card{   display:flex;   justify-content:center;   align-items:center;   flex-shrink:0;   position:relative;   min-height:90px; }
     #header-center{display:flex;align-items:baseline;}
-    #date-display{font-size:38px;font-weight:500;line-height:1;letter-spacing:-.5px;}
-    #time-display{font-size:38px;font-weight:500;line-height:1;letter-spacing:-.5px;margin-left:1.4rem;transition:color 2.5s ease;}
+    #date-display{font-size:42px;font-weight:600;line-height:1;letter-spacing:-.5px;}
+    #time-display{font-size:42px;font-weight:600;line-height:1;letter-spacing:-.5px;margin-left:1.4rem;transition:color 2.5s ease;}
     #greeting{font-size:13px;opacity:.4;margin-left:1rem;}
     #theme-icon{position:absolute;right:.5rem;font-size:26px;}
 
@@ -45,7 +45,7 @@
     .week-day.has-event .week-dot{opacity:.75;}
 
     /* 3행: 다가오는 일정 */
-    #events-card{flex:0.85;}
+    #events-card{flex:0 0 auto;max-height:150px;overflow:hidden;}
     .event-item{display:flex;align-items:center;gap:16px;padding:4px 0;border-bottom:1px solid rgba(128,128,128,.12);}
     .event-item:last-child{border-bottom:none;}
     .event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
@@ -75,9 +75,9 @@
     .weather-temp{font-size:48px;font-weight:500;line-height:1;}
     .weather-meta{display:flex;flex-direction:column;gap:1px;align-items:center;}
     .weather-meta span{font-size:14px;opacity:.6;}
-    #comment-card{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;gap:5px;text-align:center;padding:.5rem .8rem;}
+    #comment-card{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;text-align:center;padding:.5rem .8rem;}
     .wcl{font-size:15px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:4px 12px;border-radius:22px;display:inline-block;}
-    #facility-card{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:.5rem .8rem;}
+    #facility-card{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:.5rem .8rem;}
     .fac-row{display:flex;justify-content:center;align-items:center;padding:3px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:14px;width:100%;}
     .fac-row:last-child{border-bottom:none;}
     .fac-name{font-size:15px;white-space:nowrap;}
