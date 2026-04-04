@@ -781,6 +781,17 @@ function logAction(action, clickedButton) {
 
   clickedButton.classList.add('saving');
 
+  // 먼저 UI 즉시 반응
+  markButtonDone(action);
+  popEmojiFromButton(clickedButton, getActionEmoji(action));
+
+  burstCelebration(action);
+  // burstConfetti(action);
+
+  playSuccessMagic();
+  showToast(action + " 기록 완료!");
+
+  // 서버 저장은 뒤에서
   fetch(SCRIPT_URL, {
     method: "POST",
     headers: {
@@ -792,33 +803,17 @@ function logAction(action, clickedButton) {
       note: ""
     })
   })
-.then(function(res) {
-  return res.text().then(function(text) {
-    return { ok: res.ok, status: res.status, text: text };
+  .then(function(res) {
+    return res.text();
+  })
+  .then(function() {
+    clickedButton.classList.remove('saving');
+  })
+  .catch(function(err) {
+    clickedButton.classList.remove('saving');
+    showToast("기록 실패: " + err.message);
+    console.error(err);
   });
-})
-// ✅ 먼저 UI 즉시 실행
-markButtonDone(action);
-popEmojiFromButton(clickedButton, getActionEmoji(action));
-
-burstCelebration(action);
-// burstConfetti(action);
-
-playSuccessMagic();
-showToast(action + " 기록 완료!");
-
-// ✅ 서버 저장
-.then(function(res) {
-  return res.text();
-})
-.then(function() {
-  clickedButton.classList.remove('saving');
-})
-.catch(function(err) {
-  clickedButton.classList.remove('saving');
-  showToast("기록 실패: " + err.message);
-  console.error(err);
-});
 }
 </script>
 </body>
