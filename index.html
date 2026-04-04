@@ -232,6 +232,26 @@
     opacity:0;
   }
 }
+    .confetti-item{
+  position:fixed;
+  bottom:20px;
+  font-size:26px;
+  animation:confettiBurst 1.4s ease-out forwards;
+}
+
+@keyframes confettiBurst{
+  0%{
+    transform:translate(0,0) scale(.7) rotate(0deg);
+    opacity:0;
+  }
+  10%{
+    opacity:1;
+  }
+  100%{
+    transform:translate(var(--dx), var(--dy)) scale(1.15) rotate(260deg);
+    opacity:0;
+  }
+}
   </style>
 </head>
 <body>
@@ -655,7 +675,69 @@ function showToast(message){
     })(el), 2200);
   }
 }
+  function burstConfetti(action){
+  var layer = document.getElementById('celebration-layer');
+  var pool = ['💖','✨','🌟','💕'];
 
+  if(action === '일어남') pool = ['☀️','🌼','✨','💛'];
+  if(action === '잘래') pool = ['🌙','⭐','💤','💙'];
+  if(action === '아침약' || action === '저녁약') pool = ['💊','✨','💖','🌈'];
+
+  var centerX = window.innerWidth / 2;
+  var baseY = window.innerHeight - 40;
+
+  for(var i=0; i<18; i++){
+    var el = document.createElement('div');
+    el.className = 'confetti-item';
+    el.textContent = pool[Math.floor(Math.random() * pool.length)];
+
+    var angle = (Math.random() - 0.5) * Math.PI; // 좌우 퍼짐
+    var distance = 120 + Math.random() * 180;
+
+    var dx = Math.cos(angle) * distance;
+    var dy = -Math.abs(Math.sin(angle) * distance);
+
+    el.style.left = centerX + 'px';
+    el.style.top = baseY + 'px';
+    el.style.setProperty('--dx', dx + 'px');
+    el.style.setProperty('--dy', dy + 'px');
+
+    layer.appendChild(el);
+
+    setTimeout((function(node){
+      return function(){ node.remove(); };
+    })(el), 1500);
+  }
+}
+function playSuccessMagic(){
+  try{
+    var ac = new (window.AudioContext || window.webkitAudioContext)();
+    var now = ac.currentTime;
+
+    var notes = [1047, 1319, 1568, 2093];
+
+    notes.forEach(function(freq, i){
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+
+      osc.connect(gain);
+      gain.connect(ac.destination);
+
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      var t = now + i * 0.07;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.05, t + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+
+      osc.start(t);
+      osc.stop(t + 0.24);
+    });
+  } catch(e) {
+    console.error(e);
+  }
+}
 function popEmojiFromButton(button, emoji){
   var rect = button.getBoundingClientRect();
   var pop = document.createElement('div');
@@ -710,9 +792,16 @@ function logAction(action, clickedButton) {
     return;
   }
 
- markButtonDone(action);
+markButtonDone(action);
 popEmojiFromButton(clickedButton, getActionEmoji(action));
-burstCelebration(action);
+
+if(Math.random() < 0.5){
+  burstCelebration(action);   // 위에서 내리는 타입
+}else{
+  burstConfetti(action);      // 아래에서 팡 터지는 타입
+}
+
+playSuccessMagic();
 showToast(action + " 기록 완료!");
 })
 .catch(function(err) {
