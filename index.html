@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <meta http-equiv="Expires" content="0"/>
   <title>우리 집 대시보드</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <style>
@@ -905,131 +902,41 @@ function renderEvents(events){
   }).join('');
 }
 
-function bustUrl(url){
-  var sep=url.indexOf('?')===-1?'?':'&';
-  return url+sep+'_ts='+Date.now();
-}
-
-function fetchJSON(url, timeoutMs){
-  var finalUrl=bustUrl(url);
-  var opts={cache:'no-store'};
-  if(typeof AbortController!=='undefined'){
-    var controller=new AbortController();
-    opts.signal=controller.signal;
-    var timer=setTimeout(function(){controller.abort();}, timeoutMs || 8000);
-    return fetch(finalUrl, opts).then(function(r){
-      clearTimeout(timer);
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    }).catch(function(err){
-      clearTimeout(timer);
-      throw err;
-    });
-  }
-  return fetch(finalUrl, opts).then(function(r){
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return r.json();
-  });
-}
-
-var QUOTE_CACHE_KEY='dashboard_quote_cache_v1';
-
-function decodeHtmlEntities(str){
-  if(str==null) return '';
-  var ta=document.createElement('textarea');
-  ta.innerHTML=String(str);
-  return ta.value;
-}
-
-function saveQuoteCache(payload){
-  try{
-    localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(payload));
-  }catch(e){}
-}
-
-function loadQuoteCache(){
-  try{
-    var raw=localStorage.getItem(QUOTE_CACHE_KEY);
-    return raw?JSON.parse(raw):null;
-  }catch(e){
-    return null;
-  }
-}
-
-function setSyncStatus(text){
-  var el=document.getElementById('sync-status');
-  if(el) el.textContent=text;
-}
-
-function renderQuote(rawQuote, rawColor){
-  var quoteEl=document.getElementById('quote-text');
-  var quote = decodeHtmlEntities(rawQuote || '오늘 하루도 충분히 잘하고 있어요.');
-  quoteEl.innerHTML='🙋🏻‍♀️ “'+quote+'” 💕';
-  quoteEl.style.color=rawColor||'';
-  applyQuoteMarquee();
-}
-
-function renderQuoteFromCache(cache){
-  if(!cache) return false;
-  renderQuote(cache.quote, cache.quoteColor);
-  document.getElementById('quote-author').textContent=cache.author?'— '+cache.author:'';
-  if(Array.isArray(cache.events) && cache.events.length){
-    renderEvents(cache.events);
-  }
-  setSyncStatus('임시 표시중');
-  return true;
-}
-
-function parseSheetRows(rows){
-  var data={};
-  rows.forEach(function(row){
-    if(row.key) data[row.key]=row.value||'';
-  });
-
-  var events=[];
-  for(var i=1;i<=10;i++){
-    if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){
-      var rep=data['event'+i+'_repeat']||'';
-      events.push({
-        date:data['event'+i+'_date'],
-        time:data['event'+i+'_time'],
-        title:data['event'+i+'_title'],
-        contact:data['event'+i+'_contact']||'',
-        memo:data['event'+i+'_memo']||'',
-        type:rep?'repeat':'one-time',
-        note:rep
-      });
-    }
-  }
-
-  return {
-    quote:data['quote'] || '오늘 하루도 충분히 잘하고 있어요.',
-    quoteColor:data['quote_color'] || '',
-    author:data['author'] || '',
-    events:events
-  };
-}
-
-function applySheetPayload(payload){
-  renderQuote(payload.quote, payload.quoteColor);
-  document.getElementById('quote-author').textContent=payload.author?'— '+payload.author:'';
-  renderEvents(payload.events || []);
-  var now=new Date();
-  setSyncStatus(to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨');
-}
-
 function fetchSheetData(){
-  return fetchJSON(OPENSHEET_URL, 8000).then(function(rows){
-    var payload=parseSheetRows(rows);
-    applySheetPayload(payload);
-    saveQuoteCache(payload);
-  }).catch(function(err){
-    console.error('[dashboard] sheet fetch failed:', err);
-    var cache=loadQuoteCache();
-    if(renderQuoteFromCache(cache)) return;
-    renderQuote('오늘 하루도 충분히 잘하고 있어요.', '');
-    document.getElementById('quote-author').textContent='';
-    setSyncStatus('연결 확인 필요');
+  fetch(OPENSHEET_URL).then(function(r){return r.json();}).then(function(rows){
+    var data={};rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
+
+    var quoteEl=document.getElementById('quote-text');
+    quoteEl.innerHTML='🙋🏻\u200d♀️ “'+(data['quote']||'오늘 하루도 충분히 잘하고 있어요.')+'” 💕';
+    quoteEl.style.color=data['quote_color']||'';
+    applyQuoteMarquee();
+
+    document.getElementById('quote-author').textContent=data['author']?'— '+data['author']:'';
+
+    var events=[];
+    for(var i=1;i<=10;i++){
+      if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){
+        var rep=data['event'+i+'_repeat']||'';
+        events.push({
+          date:data['event'+i+'_date'],
+          time:data['event'+i+'_time'],
+          title:data['event'+i+'_title'],
+          contact:data['event'+i+'_contact']||'',
+          memo:data['event'+i+'_memo']||'',
+          type:rep?'repeat':'one-time',
+          note:rep
+        });
+      }
+    }
+    renderEvents(events);
+    var now=new Date();
+    document.getElementById('sync-status').textContent=to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨';
+  }).catch(function(){
+    var quoteEl=document.getElementById('quote-text');
+    quoteEl.innerHTML='🙋🏻\u200d♀️ “오늘 하루도 충분히 잘하고 있어요.” 💕';
+    quoteEl.style.color='';
+    applyQuoteMarquee();
+    document.getElementById('sync-status').textContent='오프라인';
   });
 }
 
@@ -1052,7 +959,8 @@ function makeComments(cur,high,low,maxP,aftP){
 }
 
 function loadWeather(){
-  fetchJSON('https://api.open-meteo.com/v1/forecast?latitude='+FIXED_LAT+'&longitude='+FIXED_LON+'&current=temperature_2m,apparent_temperature,weather_code&hourly=precipitation_probability&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=1')
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+FIXED_LAT+'&longitude='+FIXED_LON+'&current=temperature_2m,apparent_temperature,weather_code&hourly=precipitation_probability&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=1')
+    .then(function(r){return r.json();})
     .then(function(data){
       var cur=Math.round(data.current.temperature_2m),feels=Math.round(data.current.apparent_temperature),code=data.current.weather_code;
       var high=Math.round(data.daily.temperature_2m_max[0]),low=Math.round(data.daily.temperature_2m_min[0]);
@@ -1185,53 +1093,12 @@ applyTheme(getThemeKey(0,new Date().getHours()));
 buildWeekly();
 updateClock();
 loadFacility();
-
-var SHEET_REFRESH_MS=20000;
-var WEATHER_REFRESH_MS=300000;
-var ALERT_REFRESH_MS=30000;
-var CLOCK_REFRESH_MS=1000;
-var HARD_RELOAD_MS=900000;
-var lastSheetFetchAt=0;
-var lastWeatherFetchAt=0;
-
-function refreshSheetIfNeeded(force){
-  if(force || Date.now()-lastSheetFetchAt>=SHEET_REFRESH_MS){
-    lastSheetFetchAt=Date.now();
-    return fetchSheetData();
-  }
-  return Promise.resolve();
-}
-
-function refreshWeatherIfNeeded(force){
-  if(force || Date.now()-lastWeatherFetchAt>=WEATHER_REFRESH_MS){
-    lastWeatherFetchAt=Date.now();
-    return loadWeather();
-  }
-  return Promise.resolve();
-}
-
-function refreshDashboard(force){
-  refreshSheetIfNeeded(force);
-  refreshWeatherIfNeeded(force);
-  checkAlerts();
-}
-
-refreshDashboard(true);
-setInterval(updateClock,CLOCK_REFRESH_MS);
-setInterval(function(){ refreshSheetIfNeeded(false); },SHEET_REFRESH_MS);
-setInterval(function(){ refreshWeatherIfNeeded(false); },WEATHER_REFRESH_MS);
-setInterval(checkAlerts,ALERT_REFRESH_MS);
-setInterval(function(){ location.reload(); },HARD_RELOAD_MS);
-
-document.addEventListener('visibilitychange',function(){
-  if(!document.hidden){
-    refreshDashboard(true);
-  }
-});
-window.addEventListener('focus',function(){ refreshDashboard(true); });
-window.addEventListener('pageshow',function(){ refreshDashboard(true); });
-window.addEventListener('online',function(){ refreshDashboard(true); });
-
+loadWeather();
+fetchSheetData();
+setInterval(updateClock,10000);
+setInterval(fetchSheetData,30000);
+setInterval(loadWeather,600000);
+setInterval(checkAlerts,30000);
 window.addEventListener('resize',function(){var c=document.getElementById('bg-canvas');c.width=window.innerWidth;c.height=window.innerHeight;});
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby51XRgSsdzXVP77cJnQB9BDeL9izmsfGIgW2Tn7i4UF1YPJb4gYEO1QQYOWFAagdD1PQ/exec";
