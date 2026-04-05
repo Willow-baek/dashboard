@@ -910,21 +910,55 @@ function bustUrl(url){
   return url+sep+'_ts='+Date.now();
 }
 
-function fetchJSON(url){
-  return fetch(bustUrl(url), {
-    cache:'no-store'
-  }).then(function(r){
+function fetchJSON(url, timeoutMs){
+  var finalUrl=bustUrl(url);
+  var opts={cache:'no-store'};
+  if(typeof AbortController!=='undefined'){
+    var controller=new AbortController();
+    opts.signal=controller.signal;
+    var timer=setTimeout(function(){controller.abort();}, timeoutMs || 8000);
+    return fetch(finalUrl, opts).then(function(r){
+      clearTimeout(timer);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).catch(function(err){
+      clearTimeout(timer);
+      throw err;
+    });
+  }
+  return fetch(finalUrl, opts).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
   });
 }
 
+var QUOTE_CACHE_KEY='dashboard_quote_cache_v1';
 
 function decodeHtmlEntities(str){
   if(str==null) return '';
   var ta=document.createElement('textarea');
   ta.innerHTML=String(str);
   return ta.value;
+}
+
+function saveQuoteCache(payload){
+  try{
+    localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(payload));
+  }catch(e){}
+}
+
+function loadQuoteCache(){
+  try{
+    var raw=localStorage.getItem(QUOTE_CACHE_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch(e){
+    return null;
+  }
+}
+
+function setSyncStatus(text){
+  var el=document.getElementById('sync-status');
+  if(el) el.textContent=text;
 }
 
 function renderQuote(rawQuote, rawColor){
@@ -935,35 +969,67 @@ function renderQuote(rawQuote, rawColor){
   applyQuoteMarquee();
 }
 
-function fetchSheetData(){
-  return fetchJSON(OPENSHEET_URL).then(function(rows){
-    var data={};rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
+function renderQuoteFromCache(cache){
+  if(!cache) return false;
+  renderQuote(cache.quote, cache.quoteColor);
+  document.getElementById('quote-author').textContent=cache.author?'— '+cache.author:'';
+  if(Array.isArray(cache.events) && cache.events.length){
+    renderEvents(cache.events);
+  }
+  setSyncStatus('임시 표시중');
+  return true;
+}
 
-    renderQuote(data['quote'], data['quote_color']);
+function parseSheetRows(rows){
+  var data={};
+  rows.forEach(function(row){
+    if(row.key) data[row.key]=row.value||'';
+  });
 
-    document.getElementById('quote-author').textContent=data['author']?'— '+data['author']:'';
-
-    var events=[];
-    for(var i=1;i<=10;i++){
-      if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){
-        var rep=data['event'+i+'_repeat']||'';
-        events.push({
-          date:data['event'+i+'_date'],
-          time:data['event'+i+'_time'],
-          title:data['event'+i+'_title'],
-          contact:data['event'+i+'_contact']||'',
-          memo:data['event'+i+'_memo']||'',
-          type:rep?'repeat':'one-time',
-          note:rep
-        });
-      }
+  var events=[];
+  for(var i=1;i<=10;i++){
+    if(data['event'+i+'_date']&&data['event'+i+'_time']&&data['event'+i+'_title']){
+      var rep=data['event'+i+'_repeat']||'';
+      events.push({
+        date:data['event'+i+'_date'],
+        time:data['event'+i+'_time'],
+        title:data['event'+i+'_title'],
+        contact:data['event'+i+'_contact']||'',
+        memo:data['event'+i+'_memo']||'',
+        type:rep?'repeat':'one-time',
+        note:rep
+      });
     }
-    renderEvents(events);
-    var now=new Date();
-    document.getElementById('sync-status').textContent=to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨';
-  }).catch(function(){
+  }
+
+  return {
+    quote:data['quote'] || '오늘 하루도 충분히 잘하고 있어요.',
+    quoteColor:data['quote_color'] || '',
+    author:data['author'] || '',
+    events:events
+  };
+}
+
+function applySheetPayload(payload){
+  renderQuote(payload.quote, payload.quoteColor);
+  document.getElementById('quote-author').textContent=payload.author?'— '+payload.author:'';
+  renderEvents(payload.events || []);
+  var now=new Date();
+  setSyncStatus(to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨');
+}
+
+function fetchSheetData(){
+  return fetchJSON(OPENSHEET_URL, 8000).then(function(rows){
+    var payload=parseSheetRows(rows);
+    applySheetPayload(payload);
+    saveQuoteCache(payload);
+  }).catch(function(err){
+    console.error('[dashboard] sheet fetch failed:', err);
+    var cache=loadQuoteCache();
+    if(renderQuoteFromCache(cache)) return;
     renderQuote('오늘 하루도 충분히 잘하고 있어요.', '');
-    document.getElementById('sync-status').textContent='오프라인';
+    document.getElementById('quote-author').textContent='';
+    setSyncStatus('연결 확인 필요');
   });
 }
 
