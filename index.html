@@ -6,8 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>우리 집 대시보드</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
+    :root{--block-gap:.74rem;--panel-slot-height:205px;}
     html,body{height:100%;overflow:hidden;}
     #bg-wrap{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden;transition:background 3s ease;}
     #bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
@@ -20,45 +22,44 @@
     #moon{position:absolute;width:62px;height:62px;border-radius:50%;background:#e8e2cc;box-shadow:0 0 18px rgba(220,210,175,0.55),inset -14px -4px 0 rgba(0,0,0,0.22);top:58px;right:125px;display:none;}
     .cloud{position:absolute;border-radius:60px;animation:cloudDrift linear infinite;}
     @keyframes cloudDrift{from{transform:translateX(-160%)}to{transform:translateX(calc(100vw + 160%))}}
-#dash{
-  position:relative;
-  z-index:2;
-  width:100%;
-  height:100vh;
-  height:-webkit-fill-available;
-  padding:0.4rem 0.4rem 1rem;
-  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
-  display:flex;
-  flex-direction:column;
-  gap:0.35rem;
-  overflow:hidden;
-  transition:color 2.5s ease;
-}
-    #main-stack{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:0.35rem;
-}
+
+    /* ── 전체 레이아웃 ── */
+    #dash{
+      position:relative;
+      z-index:2;
+      width:100%;
+      height:100vh;
+      height:-webkit-fill-available;
+      padding:0.35rem 0.4rem 0.5rem;
+      font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+      display:flex;
+      flex-direction:column;
+      gap:0.28rem;
+      overflow:hidden;
+      transition:color 2.5s ease;
+    }
+
     .section-label{
-  font-size:10px;
-  font-weight:500;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  opacity:.38;
-  margin-bottom:8px;
-}
+      font-size:10px;
+      font-weight:500;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      opacity:.38;
+      margin-bottom:8px;
+    }
 
-    /* 1행: 날짜+시간 */
-    #header-card{   display:flex;   justify-content:center;   align-items:center;   flex-shrink:0;   position:relative;   min-height:90px; }
-    #header-center{display:flex;align-items:baseline;}
-    #date-display{font-size:42px;font-weight:600;line-height:1;letter-spacing:-.5px;}
-    #time-display{font-size:42px;font-weight:600;line-height:1;letter-spacing:-.5px;margin-left:1.4rem;transition:color 2.5s ease;}
-    #greeting{font-size:13px;opacity:.4;margin-left:1rem;}
-    #theme-icon{position:absolute;right:.5rem;font-size:26px;}
+    .card{
+      border-radius:20px;
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      box-shadow:
+        0 10px 28px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+      overflow:hidden;
+    }
 
-    /* 1행: 위클리 캘린더 */
+    /* ── 위클리 캘린더 (고정) ── */
     #weekly-card{flex-shrink:0;padding:.3rem 0.8rem;}
     #weekly-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
     .week-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px;border-radius:10px;transition:background .3s;}
@@ -70,98 +71,215 @@
     .week-day.today .week-date{font-size:20px;font-weight:700;opacity:1;}
     .week-day.has-event .week-dot{opacity:.75;}
 
-    /* 3행: 다가오는 일정 */
-  #events-card{
-  flex:0 0 auto;
-  max-height:190px;
-  overflow:hidden;
-  padding:12px 14px 10px;
-}
+    /* ── 날짜+시간 (고정, 대형) ── */
+    #header-card{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-shrink:0;
+      position:relative;
 
-.event-item:last-child{border-bottom:none;}
+      min-height:180px;
+      padding:0.8rem 1rem;
+      margin:0;
+    }
+    #header-center{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:0;
+    }
+    #date-line1{display:none;}
+    #date-line2{
+      display:flex;
+      justify-content:center;
+      align-items:flex-end;
+      gap:0.36em;
+      font-size:84px;
+      font-weight:700;
+      line-height:1;
+      letter-spacing:-.5px;
+      white-space:nowrap;
+    }
+    #date-part{
+      display:inline-block;
+      opacity:.88;
+      line-height:1;
+    }
+    #time-wrap{
+      display:inline-flex;
+      align-items:flex-end;
+      gap:0.08em;
+      padding-bottom:0.04em;
+    }
+    #time-ampm{
+      font-size:0.58em;
+      font-weight:800;
+      display:inline-block;
+      vertical-align:bottom;
+      line-height:1;
+      transition:color 2.5s ease;
+      margin-left:0;
+      margin-right:0;
+      letter-spacing:0.01em;
+    }
+    #time-digital{
+      font-family:'Orbitron',sans-serif;
+      font-size:0.92em;
+      font-weight:800;
+      display:inline-block;
+      vertical-align:bottom;
+      line-height:.9;
+      transition:color 2.5s ease;
+      letter-spacing:0.04em;
+    }
+    #time-colon{
+      animation:colonBlink 1s step-end infinite;
+      display:inline-block;
+    }
+    @keyframes colonBlink{
+      0%,49%{opacity:1;}
+      50%,100%{opacity:0;}
+    }
+    #theme-icon{position:absolute;right:.7rem;top:.7rem;font-size:28px;}
 
-.event-item{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:6px 8px;
-  border-bottom:1px solid rgba(128,128,128,.12);
-}
+    /* ── 전환 구역 ── */
+    #switch-zone{
+      flex:0 0 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:var(--block-gap);
+      overflow:visible;
+      margin-top:0;
+    }
 
-.event-dday{font-size:14px;font-weight:700;min-width:56px;text-align:center;padding:5px 8px;border-radius:8px;flex-shrink:0;}
-.dday-today{background:rgba(200,0,0,.16);color:#c00;}
-.dday-soon{background:rgba(200,0,0,.12);color:#c00;}
-.dday-later{background:rgba(128,128,128,.15);}
-.event-when{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.event-date-txt{font-size:18px;font-weight:500;opacity:.9;white-space:nowrap;}
-.event-sep{font-size:14px;opacity:.3;}
-.event-time-txt{font-size:18px;opacity:.65;white-space:nowrap;}
-
-.event-title{
-  font-size:21px;
-  font-weight:500;
-  flex:1;
-  padding-left:8px;
-}
-
-.event-badge{font-size:12px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;flex-shrink:0;}
-    /* 4행: 한마디 */
-    #quote-card{flex:.5;padding:.3rem 0.7rem;display:flex;flex-direction:column;justify-content:center;}
-    .quote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+    /* ── 오늘의 한마디 (전환구역 상단 고정) ── */
+    #quote-card{
+      flex-shrink:0;
+      min-height:74px;
+      margin-bottom:0;
+      padding:.42rem 0.9rem;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .quote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
     .quote-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;opacity:.38;}
     #sync-status{font-size:10px;opacity:.28;}
     .quote-body{display:flex;justify-content:center;align-items:center;text-align:center;flex:1;}
-    .quote-text{font-size:22px;line-height:1.4;opacity:.95;font-weight:500;}
-    .quote-author{font-size:13px;opacity:.38;margin-top:4px;text-align:center;}
+    .quote-text{font-size:26px;line-height:1.45;opacity:.95;font-weight:500;}
+    .quote-author{font-size:14px;opacity:.38;margin-top:5px;text-align:center;}
 
-    /* 5행: 날씨/멘트/시설 */
-    #bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;}
+    /* ── 전환 패널 ── */
+    .switch-panel{
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
+      height:var(--panel-slot-height);
+      min-height:var(--panel-slot-height);
+      overflow:visible;
+      opacity:1;
+      transition:opacity 0.5s ease;
+    }
+    .switch-panel.hidden{
+      display:none;
+    }
+    .switch-panel.fade-out{
+      opacity:0;
+    }
+
+    /* ── 다가오는 일정 ── */
+    #events-card{
+      flex:1 1 auto;
+      height:100%;
+      overflow:hidden;
+      padding:10px 14px 8px;
+    }
+    .event-item:last-child{border-bottom:none;}
+    .event-item{
+      display:grid;
+      grid-template-columns:92px minmax(176px,204px) minmax(78px,92px) minmax(0,1fr) 92px;
+      align-items:center;
+      column-gap:8px;
+      padding:7px 8px;
+      border-bottom:1px solid rgba(128,128,128,.12);
+    }
+    .event-dday{font-size:17px;font-weight:700;min-width:62px;text-align:center;padding:5px 8px;border-radius:8px;justify-self:start;width:88px;}
+    .dday-today{background:rgba(200,0,0,.16);color:#c00;}
+    .dday-soon{background:rgba(200,0,0,.12);color:#c00;}
+    .dday-later{background:rgba(128,128,128,.15);}
+    .event-date-txt{font-size:21px;font-weight:500;opacity:.9;white-space:nowrap;letter-spacing:-.01em;}
+    .event-time-txt{font-size:21px;opacity:.65;white-space:nowrap;letter-spacing:-.01em;margin-left:-50px;}
+    .event-title{font-size:25px;font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:-30px;}
+    .event-badge{font-size:14px;padding:3px 9px;border-radius:6px;opacity:.7;white-space:nowrap;justify-self:end;}
+
+    /* ── 날씨삼총사 ── */
+    #bottom-row{
+      flex:0 0 auto;
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:var(--block-gap);
+      align-items:stretch;
+      height:100%;
+    }
     #weather-card{
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  align-items:center;
-  text-align:center;
-  padding:.5rem .8rem;
-}
-    .weather-temp{font-size:48px;font-weight:500;line-height:1;}
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      align-items:center;
+      text-align:center;
+      padding:.5rem .8rem;
+    }
+    .weather-temp{font-size:58px;font-weight:500;line-height:1;}
     .weather-meta{display:flex;flex-direction:column;gap:1px;align-items:center;}
-    .weather-meta span{font-size:14px;opacity:.6;}
+    .weather-meta span{font-size:17px;opacity:.6;}
     #weather-comments{
-  width:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-}
+      width:100%;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      transform:translateY(-10px);
+    }
     #comment-card{
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  align-items:center;
-  gap:8px;
-  text-align:center;
-  padding:.5rem .8rem;
-}
-    .wcl{font-size:15px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:4px 12px;border-radius:22px;display:inline-block;}
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      align-items:center;
+      gap:10px;
+      text-align:center;
+      padding:.5rem .8rem;
+    }
+    #comment-card .section-label,
+    #facility-card .section-label{
+      margin-bottom:10px;
+    }
+    .wcl{font-size:18px;font-weight:500;opacity:.9;background:rgba(128,128,128,.14);padding:6px 14px;border-radius:22px;display:inline-block;}
     #facility-card{
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  align-items:center;
-  text-align:center;
-  padding:.5rem .8rem;
-}
-    .fac-row{display:flex;justify-content:center;align-items:center;padding:3px 0;border-bottom:1px solid rgba(128,128,128,.1);gap:14px;width:100%;}
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      align-items:center;
+      text-align:center;
+      padding:.5rem .8rem;
+    }
+    #facility-list{
+      width:100%;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .fac-row{display:grid;grid-template-columns:minmax(92px,max-content) 1fr;align-items:center;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.1);column-gap:4px;width:100%;max-width:320px;margin:0 auto;text-align:left;}
     .fac-row:last-child{border-bottom:none;}
-    .fac-name{font-size:15px;white-space:nowrap;}
-    .fac-time{font-size:15px;font-weight:500;opacity:.75;white-space:nowrap;}
-  .closed{
-  opacity:1;
-  text-decoration:none;
-}
+    .fac-name{font-size:18px;white-space:nowrap;justify-self:start;padding-left:10px;}
+    .fac-time{font-size:18px;font-weight:500;opacity:.75;white-space:nowrap;justify-self:start;}
+    .closed{opacity:1;text-decoration:none;}
 
-    /* 알림 팝업 */
+    /* ── 알림 팝업 ── */
     #alert-popup{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(15,22,38,0.94);color:#fff;border-radius:22px;padding:18px 22px;min-width:300px;max-width:520px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.45);cursor:pointer;border:1px solid rgba(255,255,255,0.14);text-align:center;animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);}
     @keyframes slideUp{from{transform:translateX(-50%) translateY(80px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
     #alert-popup .al-close{display:block;font-size:11px;opacity:.4;text-align:right;margin-bottom:8px;}
@@ -170,166 +288,236 @@
     #alert-popup .al-clock{font-size:17px;opacity:.62;margin-bottom:10px;}
     #alert-popup .al-event{font-size:15px;opacity:.72;border-top:1px solid rgba(255,255,255,0.12);padding-top:10px;}
     #alert-popup .al-hint{font-size:11px;opacity:.3;margin-top:8px;}
-/* 체크 버튼 */
-#action-buttons{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:.45rem;
-  margin-top:.35rem;
+
+    /* ── 버튼구간 (고정, 원형) ── */
+    #action-buttons{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      align-items:center;
+      justify-items:center;
+      flex-shrink:0;
+      gap:var(--block-gap);
+      margin-top:var(--block-gap);
+      padding:0;
+      width:100%;
+    }
+    .action-btn{
+      position:relative;
+      border:none;
+      border-radius:50%;
+      width:min(158px, calc(100% - 6px));
+      aspect-ratio:1 / 1;
+      height:auto;
+      font-family:inherit;
+      font-size:16px;
+      font-weight:700;
+      color:#32404f;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      overflow:hidden;
+      isolation:isolate;
+      -webkit-tap-highlight-color:transparent;
+
+      background:
+        radial-gradient(circle at 33% 26%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.16) 20%, rgba(255,255,255,0) 42%),
+        linear-gradient(180deg, var(--btn-top) 0%, var(--btn-mid) 55%, var(--btn-bottom) 100%);
+      border:1px solid var(--btn-edge);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.24),
+        inset 0 -7px 11px rgba(0,0,0,0.09),
+        0 7px 0 var(--btn-base),
+        0 12px 18px rgba(0,0,0,0.11);
+      transition:
+        transform .18s ease,
+        box-shadow .22s ease,
+        filter .22s ease,
+        opacity .22s ease,
+        background .22s ease;
+    }
+    .action-btn::before{
+      content:"";
+      position:absolute;
+      inset:8px;
+      border-radius:50%;
+      background:radial-gradient(circle at 35% 28%, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0) 72%);
+      z-index:0;
+      pointer-events:none;
+    }
+    .action-btn::after{
+      content:"";
+      position:absolute;
+      left:18%;
+      right:18%;
+      bottom:12%;
+      height:16%;
+      border-radius:999px;
+      background:rgba(0,0,0,0.06);
+      filter:blur(10px);
+      z-index:0;
+      pointer-events:none;
+      opacity:.48;
+    }
+    .action-btn > *{
+      position:relative;
+      z-index:1;
+    }
+    .action-btn:hover{
+      transform:translateY(-2px) scale(1.01);
+      filter:brightness(1.01);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.28),
+        inset 0 -7px 11px rgba(0,0,0,0.09),
+        0 9px 0 var(--btn-base),
+        0 15px 20px rgba(0,0,0,0.12);
+    }
+    .action-btn:active{
+      transform:translateY(4px) scale(0.985);
+      box-shadow:
+        inset 0 1px 3px rgba(255,255,255,0.16),
+        inset 0 -4px 7px rgba(0,0,0,0.10),
+        0 3px 0 var(--btn-base),
+        0 7px 10px rgba(0,0,0,0.09);
+    }
+    .action-btn.wake{
+      --btn-top:#edd9a6;
+      --btn-mid:#dfc68f;
+      --btn-bottom:#cdb374;
+      --btn-edge:rgba(170,138,83,0.44);
+      --btn-base:#b0935c;
+    }
+    .action-btn.sleep{
+      --btn-top:#ced6e5;
+      --btn-mid:#bcc7d9;
+      --btn-bottom:#a7b4ca;
+      --btn-edge:rgba(117,129,151,0.42);
+      --btn-base:#8e9db7;
+    }
+    .action-btn.morning-med{
+      --btn-top:#cfdecf;
+      --btn-mid:#bdd0be;
+      --btn-bottom:#a8bea9;
+      --btn-edge:rgba(103,128,108,0.40);
+      --btn-base:#8fa892;
+    }
+    .action-btn.evening-med{
+      --btn-top:#dbcfe3;
+      --btn-mid:#c9bdd4;
+      --btn-bottom:#b3a9c1;
+      --btn-edge:rgba(122,106,139,0.40);
+      --btn-base:#9589a6;
+    }
+    .btn-emoji{
+      font-size:38px;
+      line-height:1;
+      transform:translateY(1px);
+      filter:drop-shadow(0 1px 0 rgba(255,255,255,0.12));
+    }
+    .btn-text{
+      font-size:20px;
+      line-height:1.1;
+      font-weight:800;
+      letter-spacing:-0.02em;
+      text-shadow:none;
+    }
+    .action-btn.done{
+      filter:brightness(1.08) saturate(.84);
+      opacity:.82;
+      transform:translateY(3px) scale(.987);
+      box-shadow:
+        inset 0 1px 3px rgba(255,255,255,0.18),
+        inset 0 -4px 7px rgba(0,0,0,0.07),
+        0 3px 0 var(--btn-base),
+        0 7px 10px rgba(0,0,0,0.08);
+    }
+    .action-btn.saving{
+      transform:translateY(1px) scale(.99);
+    }
+
+    /* ── Toast & 애니메이션 ── */
+    #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(16px);background:rgba(20,28,40,0.92);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;z-index:1000;transition:opacity .25s ease, transform .25s ease;white-space:nowrap;}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    #emoji-pop-layer{position:fixed;inset:0;pointer-events:none;z-index:1001;}
+    .emoji-pop{position:fixed;font-size:28px;animation:emojiFloat .9s ease-out forwards;}
+    @keyframes emojiFloat{0%{transform:translate(-50%,0) scale(.8);opacity:0;}15%{opacity:1;}100%{transform:translate(-50%,-46px) scale(1.18);opacity:0;}}
+    #celebration-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:1002;}
+    .celebrate-item{position:fixed;top:-30px;font-size:28px;animation:fallPop 1.8s linear forwards;}
+    @keyframes fallPop{0%{transform:translateY(0) rotate(0deg) scale(.8);opacity:0;}10%{opacity:1;}100%{transform:translateY(110vh) rotate(220deg) scale(1.15);opacity:0;}}
+    .confetti-item{position:fixed;font-size:26px;animation:confettiPop 1.1s ease-out forwards;will-change:transform, opacity;}
+    @keyframes confettiPop{0%{transform:translate(-50%, 0) scale(.8) rotate(0deg);opacity:0;}10%{opacity:1;}100%{transform:translate(calc(-50% + var(--dx)), var(--dy)) scale(1.15) rotate(260deg);opacity:0;}}
+  
+
+    /* ── iPad 6 가로모드 기준 섹션 위치 보정 ── */
+    @media screen and (orientation:landscape){
+      #dash{
+        padding:0.28rem 0.36rem 0.34rem;
+        gap:var(--block-gap);
+      }
+      #weekly-card{padding:.24rem 0.78rem;}
+      #header-card{
+        min-height:117px;
+        padding:0.34rem 1rem;
+        margin:0;
+      }
+      #quote-card{margin-top:0;}
+      #panel-events, #panel-weather{margin-top:0;}
+      #events-card{padding:8px 14px 6px;}
+      #bottom-row > .card{min-height:100%;height:100%;}
+      .switch-panel{height:202px;min-height:202px;}
+      #action-buttons{transform:none;}
+    }
+
+  
+/* === Jelly Button Upgrade === */
+.action-btn{
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.35), transparent 45%),
+    linear-gradient(180deg,var(--btn-top) 0%,var(--btn-mid) 55%,var(--btn-bottom) 100%);
+  box-shadow:
+    inset 0 3px 6px rgba(255,255,255,0.25),
+    inset 0 -10px 14px rgba(0,0,0,0.12),
+    0 8px 0 var(--btn-base),
+    0 14px 22px rgba(0,0,0,0.14);
+  transition:all .18s cubic-bezier(.34,1.4,.64,1);
 }
 
-.action-btn{
-  position:relative;
-  border:none;
-  border-radius:18px;
-  padding:.85rem .4rem;
-  font-family:inherit;
-  font-size:16px;
-  font-weight:600;
-  background:rgba(255,255,255,0.32);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  color:inherit;
-  box-shadow:0 4px 14px rgba(0,0,0,0.08);
-  transition:transform .12s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
-  cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  min-height:74px;
+.action-btn::before{
+  content:"";
+  position:absolute;
+  top:12%;
+  left:18%;
+  width:64%;
+  height:38%;
+  background:radial-gradient(ellipse at center,rgba(255,255,255,0.35),rgba(255,255,255,0.08) 60%,transparent 100%);
+  border-radius:50%;
+  filter:blur(2px);
+  pointer-events:none;
 }
 
 .action-btn:active{
-  transform:scale(0.94);
-}
-
-.action-btn:hover{
-  box-shadow:0 6px 18px rgba(0,0,0,0.12);
-}
-
-.action-btn.wake{background:rgba(255,230,140,0.28);}
-.action-btn.sleep{background:rgba(180,190,255,0.25);}
-.action-btn.med{background:rgba(180,255,210,0.22);}
-
-.btn-emoji{
-  font-size:22px;
-  line-height:1;
-}
-
-.btn-text{
-  font-size:15px;
-  line-height:1.1;
+  transform:translateY(5px) scale(0.96);
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,0.18),
+    inset 0 -6px 10px rgba(0,0,0,0.15),
+    0 3px 0 var(--btn-base),
+    0 6px 12px rgba(0,0,0,0.12);
 }
 
 .action-btn.done{
-  opacity:.72;
-  box-shadow:none;
+  animation:jellyPop 0.4s ease;
 }
 
-.action-btn.saving{
-  transform:scale(0.96);
+@keyframes jellyPop{
+  0%{transform:scale(1);}
+  30%{transform:scale(0.94);}
+  60%{transform:scale(1.05);}
+  100%{transform:scale(1);}
 }
 
-#toast{
-  position:fixed;
-  left:50%;
-  bottom:90px;
-  transform:translateX(-50%) translateY(16px);
-  background:rgba(20,28,40,0.92);
-  color:#fff;
-  padding:12px 18px;
-  border-radius:999px;
-  font-size:14px;
-  font-weight:600;
-  opacity:0;
-  pointer-events:none;
-  z-index:1000;
-  transition:opacity .25s ease, transform .25s ease;
-  white-space:nowrap;
-}
-
-#toast.show{
-  opacity:1;
-  transform:translateX(-50%) translateY(0);
-}
-
-#emoji-pop-layer{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:1001;
-}
-
-.emoji-pop{
-  position:fixed;
-  font-size:28px;
-  animation:emojiFloat .9s ease-out forwards;
-}
-
-@keyframes emojiFloat{
-  0%{
-    transform:translate(-50%,0) scale(.8);
-    opacity:0;
-  }
-  15%{
-    opacity:1;
-  }
-  100%{
-    transform:translate(-50%,-46px) scale(1.18);
-    opacity:0;
-  }
-}
-    #celebration-layer{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  overflow:hidden;
-  z-index:1002;
-}
-
-.celebrate-item{
-  position:fixed;
-  top:-30px;
-  font-size:28px;
-  animation:fallPop 1.8s linear forwards;
-}
-
-@keyframes fallPop{
-  0%{
-    transform:translateY(0) rotate(0deg) scale(.8);
-    opacity:0;
-  }
-  10%{
-    opacity:1;
-  }
-  100%{
-    transform:translateY(110vh) rotate(220deg) scale(1.15);
-    opacity:0;
-  }
-}
-.confetti-item{
-  position:fixed;
-  font-size:26px;
-  animation:confettiPop 1.1s ease-out forwards;
-  will-change:transform, opacity;
-}
-
-@keyframes confettiPop{
-  0%{
-    transform:translate(-50%, 0) scale(.8) rotate(0deg);
-    opacity:0;
-  }
-  10%{
-    opacity:1;
-  }
-  100%{
-    transform:translate(calc(-50% + var(--dx)), var(--dy)) scale(1.15) rotate(260deg);
-    opacity:0;
-  }
-}
-  </style>
+</style>
 </head>
 <body>
 <div id="bg-wrap">
@@ -342,92 +530,97 @@
 
 <div id="dash">
 
-  <!-- 1행: 위클리 캘린더 -->
+  <!-- 위클리 캘린더 (고정) -->
   <div id="weekly-card" class="card">
     <div id="weekly-row"></div>
   </div>
 
-  <!-- 2행: 날짜+시간 -->
+  <!-- 날짜+시간 (고정, 대형 2줄) -->
   <div id="header-card" class="card">
     <div id="header-center">
-      <div id="date-display">로딩 중...</div>
-      <div id="time-display">--:--</div>
-      <div id="greeting"></div>
+      <div id="date-line1">로딩 중...</div>
+      <div id="date-line2"><span id="date-part"></span><span id="time-wrap"><span id="time-ampm">--</span><span id="time-digital"><span id="time-h">--</span><span id="time-colon">:</span><span id="time-m">--</span></span></span></div>
     </div>
     <div id="theme-icon">☀️</div>
   </div>
 
-  <div id="main-stack">
-  <!-- 3행: 다가오는 일정 -->
-  <div id="events-card" class="card">
-    <div class="section-label">다가오는 일정</div>
-    <div id="events-list"><div style="opacity:.4;font-size:16px;padding:6px 0;">불러오는 중...</div></div>
-  </div>
+  <!-- 전환 구역 -->
+  <div id="switch-zone">
 
-  <!-- 4행: 오늘의 한마디 -->
-  <div id="quote-card" class="card">
-    <div class="quote-header">
-      <span class="quote-label">오늘의 한마디</span>
-      <span id="sync-status"></span>
-    </div>
-    <div class="quote-body">
-      <div>
-        <div class="quote-text" id="quote-text">불러오는 중...</div>
-        <div class="quote-author" id="quote-author"></div>
+    <!-- 오늘의 한마디 (상단 고정) -->
+    <div id="quote-card" class="card">
+      <div class="quote-header">
+        <span class="quote-label">오늘의 한마디</span>
+        <span id="sync-status"></span>
       </div>
-    </div>
-  </div>
-
-  <!-- 5행: 날씨 / 멘트 / 시설 -->
-  <div id="bottom-row">
-    <div id="weather-card" class="card">
-      <div class="section-label">날씨 · 마포구 서교동</div>
-      <div class="weather-top">
-        <div id="weather-icon" style="font-size:46px;">🌤</div>
-        <div class="weather-meta">
-          <div class="weather-temp" id="weather-temp">--°</div>
-          <span id="weather-desc">확인 중...</span>
-          <span id="weather-feels"></span>
+      <div class="quote-body">
+        <div>
+          <div class="quote-text" id="quote-text">불러오는 중...</div>
+          <div class="quote-author" id="quote-author"></div>
         </div>
       </div>
     </div>
-    <div id="comment-card" class="card">
-      <div class="section-label">날씨 한마디</div>
-      <div id="weather-comments"></div>
-    </div>
-     <div id="facility-card" class="card">
-      <div class="section-label">커뮤니티 시설</div>
-      <div id="facility-list"></div>
-    </div>
-  </div>
 
+    <!-- 패널 A: 다가오는 일정 -->
+    <div id="panel-events" class="switch-panel">
+      <div id="events-card" class="card">
+        <div class="section-label">다가오는 일정</div>
+        <div id="events-list"><div style="opacity:.4;font-size:16px;padding:6px 0;">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 패널 B: 날씨삼총사 -->
+    <div id="panel-weather" class="switch-panel hidden">
+      <div id="bottom-row">
+        <div id="weather-card" class="card">
+          <div class="section-label">날씨 · 마포구 서교동</div>
+          <div class="weather-top">
+            <div id="weather-icon" style="font-size:46px;">🌤</div>
+            <div class="weather-meta">
+              <div class="weather-temp" id="weather-temp">--°</div>
+              <span id="weather-desc">확인 중...</span>
+              <span id="weather-feels"></span>
+            </div>
+          </div>
+        </div>
+        <div id="comment-card" class="card">
+          <div class="section-label">날씨 한마디</div>
+          <div id="weather-comments"></div>
+        </div>
+        <div id="facility-card" class="card">
+          <div class="section-label">커뮤니티 시설</div>
+          <div id="facility-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /switch-zone -->
+
+  <!-- 버튼구간 (고정) -->
   <div id="action-buttons">
     <button class="action-btn wake" onclick="logAction('일어남', this)">
       <span class="btn-emoji">☀️</span>
       <span class="btn-text">일어남</span>
     </button>
-
-<button class="action-btn sleep" onclick="logAction('잘래', this)">
+    <button class="action-btn sleep" onclick="logAction('잘래', this)">
       <span class="btn-emoji">🌙</span>
       <span class="btn-text">잘래</span>
     </button>
-
-<button class="action-btn med" onclick="logAction('아침약', this)">
+    <button class="action-btn morning-med" onclick="logAction('아침약', this)">
       <span class="btn-emoji">💊</span>
       <span class="btn-text">아침약</span>
     </button>
-
-<button class="action-btn med" onclick="logAction('저녁약', this)">
+    <button class="action-btn evening-med" onclick="logAction('저녁약', this)">
       <span class="btn-emoji">💊</span>
       <span class="btn-text">저녁약</span>
     </button>
   </div>
-</div>
-  <div id="toast"></div>
-  <div id="emoji-pop-layer"></div>
-  <div id="celebration-layer"></div>
 
 </div>
+
+<div id="toast"></div>
+<div id="emoji-pop-layer"></div>
+<div id="celebration-layer"></div>
 
 <div id="alert-popup" onclick="closeAlert()">
   <span class="al-close">탭해서 닫기 ✕</span>
@@ -490,7 +683,8 @@ function applyTheme(key){
   var t=THEMES[key]||THEMES.clearDay;
   document.getElementById('bg-wrap').style.background=t.bg;
   document.getElementById('dash').style.color=t.text;
-  document.getElementById('time-display').style.color=t.timeColor;
+  document.getElementById('time-ampm').style.color=t.timeColor;
+  document.getElementById('time-digital').style.color=t.timeColor;
   document.querySelectorAll('.card').forEach(function(c){c.style.background=t.card;});
   if(key===currentKey)return;
   currentKey=key;
@@ -574,10 +768,16 @@ function buildWeekly(){
   }
 }
 
+/* ── 시계 (날짜 2줄 대형 표시) ── */
 function updateClock(){
   var now=new Date(),h=now.getHours();
-  document.getElementById('time-display').textContent=' '+to12h(String(h).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-  document.getElementById('date-display').textContent=now.getFullYear()+'년 '+MONTHS_KR[now.getMonth()]+' '+now.getDate()+'일 '+DAYS_KR[now.getDay()];
+  var timeStr=to12h(String(h).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
+  var h12=now.getHours()%12||12;
+  var ampm=now.getHours()<12?'오전':'오후';
+  document.getElementById('date-part').textContent=(now.getMonth()+1)+'월 '+now.getDate()+'일 ('+DAYS_SHORT[now.getDay()]+') ';
+  document.getElementById('time-ampm').textContent=ampm;
+  document.getElementById('time-h').textContent=String(h12);
+  document.getElementById('time-m').textContent=String(now.getMinutes()).padStart(2,'0');
   document.getElementById('theme-icon').textContent=THEMES[currentKey]?'':' ';
 }
 
@@ -601,7 +801,7 @@ function renderEvents(events){
     var mo=parseInt(ev.date.slice(5,7)),d=parseInt(ev.date.slice(8,10));
     var bc=ev.type==='repeat'?'rgba(121,134,203,0.28)':'rgba(100,180,120,0.22)';
     var bt=ev.type==='repeat'?'🔁 '+ev.note:'1회';
-    return'<div class="event-item"><div class="event-dday '+dc+'">'+dt+'</div><div class="event-when"><span class="event-date-txt">'+mo+'월 '+d+'일 ('+DAYS_KR[evDate.getDay()]+')</span><span class="event-sep">·</span><span class="event-time-txt">'+to12h(ev.time)+'</span></div><span class="event-title">'+ev.title+'</span><span class="event-badge" style="background:'+bc+';">'+bt+'</span></div>';
+    return'<div class="event-item"><div class="event-dday '+dc+'">'+dt+'</div><span class="event-date-txt">'+mo+'월 '+d+'일 ('+DAYS_KR[evDate.getDay()]+')</span><span class="event-time-txt">'+to12h(ev.time)+'</span><span class="event-title">'+ev.title+'</span><span class="event-badge" style="background:'+bc+';">'+bt+'</span></div>';
   }).join('');
 }
 
@@ -654,12 +854,31 @@ function loadWeather(){
       var key=getThemeKey(code,new Date().getHours());
       applyTheme(key);
       document.getElementById('theme-icon').textContent=icons[code]||'🌡️';
-    }).catch(function(){function fixHeight(){document.getElementById('dash').style.height=window.innerHeight+'px';}
-fixHeight();
-window.addEventListener('resize',fixHeight);
-window.addEventListener('orientationchange',function(){setTimeout(fixHeight,300);});
-applyTheme(getThemeKey(0,new Date().getHours()));});
+    }).catch(function(){
+      function fixHeight(){document.getElementById('dash').style.height=window.innerHeight+'px';}
+      fixHeight();
+      window.addEventListener('resize',fixHeight);
+      window.addEventListener('orientationchange',function(){setTimeout(fixHeight,300);});
+      applyTheme(getThemeKey(0,new Date().getHours()));
+    });
 }
+
+/* ── 패널 전환 (7초마다) ── */
+var currentPanel='events';
+function switchPanel(){
+  var evPanel=document.getElementById('panel-events');
+  var wxPanel=document.getElementById('panel-weather');
+  if(currentPanel==='events'){
+    evPanel.classList.add('hidden');
+    wxPanel.classList.remove('hidden');
+    currentPanel='weather';
+  }else{
+    wxPanel.classList.add('hidden');
+    evPanel.classList.remove('hidden');
+    currentPanel='events';
+  }
+}
+setInterval(switchPanel,7000);
 
 /* ── 알림 ── */
 var notifiedEvents={},currentEvents=[];
@@ -708,6 +927,7 @@ setInterval(fetchSheetData,30000);
 setInterval(loadWeather,600000);
 setInterval(checkAlerts,30000);
 window.addEventListener('resize',function(){var c=document.getElementById('bg-canvas');c.width=window.innerWidth;c.height=window.innerHeight;});
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby51XRgSsdzXVP77cJnQB9BDeL9izmsfGIgW2Tn7i4UF1YPJb4gYEO1QQYOWFAagdD1PQ/exec";
 function getCategory(action){
   if(action === '일어남' || action === '잘래') return '기상';
@@ -731,14 +951,13 @@ function showToast(message){
     toast.classList.remove('show');
   }, 1600);
 }
-  function burstCelebration(action){
+
+function burstCelebration(action){
   var layer = document.getElementById('celebration-layer');
   var pool = ['💖','💕','✨','🌟'];
-
   if(action === '일어남') pool = ['☀️','🌼','✨','💛'];
   if(action === '잘래') pool = ['🌙','💤','⭐','💙'];
   if(action === '아침약' || action === '저녁약') pool = ['💊','✨','💖','🌈'];
-
   for(var i=0; i<18; i++){
     var el = document.createElement('div');
     el.className = 'celebrate-item';
@@ -747,109 +966,60 @@ function showToast(message){
     el.style.animationDelay = (Math.random() * 0.25) + 's';
     el.style.fontSize = (22 + Math.random() * 16) + 'px';
     layer.appendChild(el);
-
-    setTimeout((function(node){
-      return function(){ node.remove(); };
-    })(el), 2200);
+    setTimeout((function(node){return function(){ node.remove(); };})(el), 2200);
   }
 }
-  function burstConfetti(action){
+
+function burstConfetti(action){
   var layer = document.getElementById('celebration-layer');
   var pool = ['💖','✨','🌟','💕'];
-
   if(action === '일어남') pool = ['☀️','🌼','✨','💛'];
   if(action === '잘래') pool = ['🌙','⭐','💤','💙'];
   if(action === '아침약' || action === '저녁약') pool = ['💊','✨','💖','🌈'];
-
   var centerX = window.innerWidth / 2;
   var baseY = window.innerHeight - 40;
-
   for(var i=0; i<18; i++){
     var el = document.createElement('div');
     el.className = 'confetti-item';
     el.textContent = pool[Math.floor(Math.random() * pool.length)];
-
-    var angle = (Math.random() - 0.5) * Math.PI; // 좌우 퍼짐
+    var angle = (Math.random() - 0.5) * Math.PI;
     var distance = 120 + Math.random() * 180;
-
     var dx = Math.cos(angle) * distance;
     var dy = -Math.abs(Math.sin(angle) * distance);
-
     el.style.left = centerX + 'px';
     el.style.top = baseY + 'px';
     el.style.setProperty('--dx', dx + 'px');
     el.style.setProperty('--dy', dy + 'px');
-
     layer.appendChild(el);
-
-    setTimeout((function(node){
-      return function(){ node.remove(); };
-    })(el), 1500);
+    setTimeout((function(node){return function(){ node.remove(); };})(el), 1500);
   }
 }
+
 function playSuccessMagic(){
   try{
     var ac = new (window.AudioContext || window.webkitAudioContext)();
     var now = ac.currentTime;
-
-    // 메인 멜로디 (위로 올라가는 느낌)
-    var notes = [
-      [880, 0.00, 0.25],
-      [1047, 0.08, 0.28],
-      [1319, 0.16, 0.32],
-      [1568, 0.28, 0.38],
-      [2093, 0.45, 0.55]
-    ];
-
+    var notes = [[880,0.00,0.25],[1047,0.08,0.28],[1319,0.16,0.32],[1568,0.28,0.38],[2093,0.45,0.55]];
     notes.forEach(function(n){
-      var freq = n[0];
-      var start = now + n[1];
-      var dur = n[2];
-
-      var osc = ac.createOscillator();
-      var gain = ac.createGain();
-
-      osc.connect(gain);
-      gain.connect(ac.destination);
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, start);
-
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.05, start + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-
-      osc.start(start);
-      osc.stop(start + dur + 0.02);
+      var freq=n[0],start=now+n[1],dur=n[2];
+      var osc=ac.createOscillator(),gain=ac.createGain();
+      osc.connect(gain);gain.connect(ac.destination);
+      osc.type='triangle';osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(0.05,start+0.03);gain.gain.exponentialRampToValueAtTime(0.0001,start+dur);
+      osc.start(start);osc.stop(start+dur+0.02);
     });
-
-    // ✨ 반짝이는 고음 레이어 (샤라라 느낌 핵심)
-    var sparkle = [2093, 2637, 3136, 4186];
-
-    sparkle.forEach(function(freq, i){
-      var osc = ac.createOscillator();
-      var gain = ac.createGain();
-
-      var t = now + 0.2 + i * 0.08;
-
-      osc.connect(gain);
-      gain.connect(ac.destination);
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, t);
-
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.02, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
-
-      osc.start(t);
-      osc.stop(t + 0.3);
+    var sparkle=[2093,2637,3136,4186];
+    sparkle.forEach(function(freq,i){
+      var osc=ac.createOscillator(),gain=ac.createGain();
+      var t=now+0.2+i*0.08;
+      osc.connect(gain);gain.connect(ac.destination);
+      osc.type='sine';osc.frequency.setValueAtTime(freq,t);
+      gain.gain.setValueAtTime(0.0001,t);gain.gain.exponentialRampToValueAtTime(0.02,t+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.25);
+      osc.start(t);osc.stop(t+0.3);
     });
-
-  }catch(e){
-    console.error(e);
-  }
+  }catch(e){console.error(e);}
 }
+
 function popEmojiFromButton(button, emoji){
   var rect = button.getBoundingClientRect();
   var pop = document.createElement('div');
@@ -858,61 +1028,48 @@ function popEmojiFromButton(button, emoji){
   pop.style.left = (rect.left + rect.width / 2) + 'px';
   pop.style.top = (rect.top + 14) + 'px';
   document.getElementById('emoji-pop-layer').appendChild(pop);
-  setTimeout(function(){
-    pop.remove();
-  }, 950);
+  setTimeout(function(){ pop.remove(); }, 950);
 }
 
-function markButtonDone(action){
-  var buttons = document.querySelectorAll('.action-btn');
-  buttons.forEach(function(btn){
-   var labelEl = btn.querySelector('.btn-text');
-   var label = labelEl ? labelEl.textContent.trim() : '';
-   if(label === action){
-      btn.classList.add('done');
-    }
-  });
+function resetButtonVisual(button){
+  if(!button) return;
+  button.classList.remove('saving');
+  button.classList.remove('done');
+  if(button._resetTimer){
+    clearTimeout(button._resetTimer);
+    button._resetTimer = null;
+  }
+}
+
+function flashButtonDone(button){
+  if(!button) return;
+  if(button._resetTimer){ clearTimeout(button._resetTimer); }
+  button.classList.remove('done');
+  void button.offsetWidth;
+  button.classList.add('done');
+  button._resetTimer = setTimeout(function(){
+    button.classList.remove('saving');
+    button.classList.remove('done');
+    button._resetTimer = null;
+  }, 1400);
 }
 
 function logAction(action, clickedButton) {
   var category = getCategory(action);
-
   clickedButton.classList.add('saving');
-
-  // 먼저 UI 즉시 반응
-  markButtonDone(action);
   popEmojiFromButton(clickedButton, getActionEmoji(action));
-
-  if(Math.random() < 0.5){
-  burstCelebration(action);
-}else{
-  burstConfetti(action);
-}
-  // burstConfetti(action);
-
+  if(Math.random() < 0.5){ burstCelebration(action); }else{ burstConfetti(action); }
   playSuccessMagic();
   showToast(action + " 기록 완료!");
-
-  // 서버 저장은 뒤에서
   fetch(SCRIPT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify({
-      category: category,
-      action: action,
-      note: ""
-    })
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({category: category, action: action, note: ""})
   })
-  .then(function(res) {
-    return res.text();
-  })
-  .then(function() {
-    clickedButton.classList.remove('saving');
-  })
-  .catch(function(err) {
-    clickedButton.classList.remove('saving');
+  .then(function(res){ return res.text(); })
+  .then(function(){ flashButtonDone(clickedButton); })
+  .catch(function(err){
+    resetButtonVisual(clickedButton);
     showToast("기록 실패: " + err.message);
     console.error(err);
   });
