@@ -919,14 +919,27 @@ function fetchJSON(url){
   });
 }
 
+
+function decodeHtmlEntities(str){
+  if(str==null) return '';
+  var ta=document.createElement('textarea');
+  ta.innerHTML=String(str);
+  return ta.value;
+}
+
+function renderQuote(rawQuote, rawColor){
+  var quoteEl=document.getElementById('quote-text');
+  var quote = decodeHtmlEntities(rawQuote || '오늘 하루도 충분히 잘하고 있어요.');
+  quoteEl.innerHTML='🙋🏻‍♀️ “'+quote+'” 💕';
+  quoteEl.style.color=rawColor||'';
+  applyQuoteMarquee();
+}
+
 function fetchSheetData(){
   return fetchJSON(OPENSHEET_URL).then(function(rows){
     var data={};rows.forEach(function(row){if(row.key)data[row.key]=row.value||'';});
 
-    var quoteEl=document.getElementById('quote-text');
-    quoteEl.innerHTML='🙋🏻‍♀️ “'+(data['quote']||'오늘 하루도 충분히 잘하고 있어요.')+'” 💕';
-    quoteEl.style.color=data['quote_color']||'';
-    applyQuoteMarquee();
+    renderQuote(data['quote'], data['quote_color']);
 
     document.getElementById('quote-author').textContent=data['author']?'— '+data['author']:'';
 
@@ -949,10 +962,7 @@ function fetchSheetData(){
     var now=new Date();
     document.getElementById('sync-status').textContent=to12h(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'))+' 업데이트됨';
   }).catch(function(){
-    var quoteEl=document.getElementById('quote-text');
-    quoteEl.innerHTML='🙋🏻‍♀️ “오늘 하루도 충분히 잘하고 있어요.” 💕';
-    quoteEl.style.color='';
-    applyQuoteMarquee();
+    renderQuote('오늘 하루도 충분히 잘하고 있어요.', '');
     document.getElementById('sync-status').textContent='오프라인';
   });
 }
