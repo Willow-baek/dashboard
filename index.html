@@ -244,6 +244,13 @@
       overflow:hidden;
       padding:6px 14px 6px;
     }
+    #events-list{
+      overflow-y:auto;
+      height:100%;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    #events-list::-webkit-scrollbar{display:none;}
     #events-card .section-label{display:none;}
     .event-item:last-child{border-bottom:none;}
     .event-item{
@@ -1262,7 +1269,7 @@ function renderEvents(events){
   var now=new Date(),todayMid=new Date(now.getFullYear(),now.getMonth(),now.getDate()),todayStr=now.toISOString().slice(0,10);
   currentEventDates=events.map(function(e){return e.date;});
   buildWeekly();
-  var sorted=events.filter(function(e){return e.date>=todayStr;}).sort(function(a,b){return(a.date+a.time).localeCompare(b.date+b.time);}).slice(0,4);
+  var sorted=events.filter(function(e){return e.date>=todayStr;}).sort(function(a,b){return(a.date+a.time).localeCompare(b.date+b.time);});
   if(!sorted.length){list.innerHTML='<div style="opacity:.4;font-size:17px;padding:6px 0;">다가오는 일정이 없어요 😊</div>';return;}
   list.innerHTML=sorted.map(function(ev){
     var evDate=new Date(ev.date+'T'+ev.time);
