@@ -75,9 +75,26 @@ body { color: var(--ink); }
 .today-event:not(.past) { animation: todayAttention 2.4s ease-in-out infinite; }
 @keyframes todayAttention {
   0%, 100% { background-color: rgba(210,45,45,.045); box-shadow: inset 3px 0 0 rgba(210,45,45,.12); }
-  50% { background-color: rgba(210,45,45,.18); box-shadow: inset 3px 0 0 rgba(210,45,45,.65); }
+  50% { background-color: rgba(210,45,45,.18); box-shadow: inset 3px 0 0 rgba(255,105,105,.95), inset 0 0 18px rgba(255,115,115,.2); }
 }
 .today-event .row-dday { color: var(--urgent-text,#d12424); background: rgba(200,0,0,.14); }
+.today-event:not(.past) .row-dday { position: relative; overflow: hidden; animation: todayGlow 2.4s ease-in-out infinite; }
+.today-event:not(.past) .row-dday::before { content: "\2726"; position: absolute; top: 1px; right: 4px; font-size: 10px; line-height: 1; color: #fff8ed; opacity: 0; pointer-events: none; animation: todayTwinkle 2.4s ease-in-out infinite; }
+.today-event:not(.past) .row-dday::after { content: ""; position: absolute; top: -30%; left: -50%; width: 24%; height: 160%; background: linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent); transform: skewX(-22deg); opacity: 0; pointer-events: none; animation: todayShine 2.4s ease-in-out infinite; }
+@keyframes todayGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,110,110,0); text-shadow: none; }
+  50% { box-shadow: 0 0 12px rgba(255,95,95,.55), inset 0 0 8px rgba(255,225,225,.35); text-shadow: 0 0 6px rgba(255,255,255,.65); }
+}
+@keyframes todayTwinkle {
+  0%, 30%, 75%, 100% { opacity: 0; transform: scale(.5) rotate(-20deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
+}
+@keyframes todayShine {
+  0%, 20% { left: -50%; opacity: 0; }
+  30% { opacity: 1; }
+  65% { left: 130%; opacity: 0; }
+  100% { left: 130%; opacity: 0; }
+}
 .today-event .row-time { color: var(--urgent-text,#d12424); opacity: 1; font-weight: 650; }
 .today-event .row-title { font-weight: 650; }
 .today-event.urgent { background: rgba(210,45,45,.12); }
@@ -125,5 +142,5 @@ footer .text-button { font-size: 12px; min-height: 34px; }
 @media (max-height: 700px) and (min-width: 621px) { #dashboard { gap: 7px; } .day-header { min-height: 116px; padding: 12px 20px; } .message-band { padding-bottom: 8px; } #message-text { font-size: 23px; } .event-card { padding: 8px; } .event-card h3 { font-size: 27px; } .event-time { font-size: 27px; } .today-section { margin-bottom: 8px; } }
 @media (max-width: 850px) { .event-card { grid-template-columns: 154px minmax(0,1fr) 62px; gap: 10px; } .event-card h3 { font-size: 25px; } .event-time { font-size: 26px; } .event-row { grid-template-columns: 60px 118px 100px minmax(0,1fr) 56px; gap: 8px; padding: 9px 3px; } .row-dday { width: 60px; font-size: 15px; } .row-date { font-size: 18px; } .row-date small { font-size: 15px; } .row-time { font-size: 17px; } .row-title { font-size: 21px; } .row-meta { font-size: 10px; } #message-text { font-size: 23px; } }
 @media (max-width: 620px) { html,body { height: auto; min-height: 100%; overflow: auto; } #dashboard { height: auto !important; min-height: 100vh; display: flex; padding: 6px 7px 10px; gap: 8px; } .card { border-radius: 16px; } .strip-day { min-height: 53px; } .strip-day .strip-date { font-size: 14px; } .strip-day.today .strip-date { font-size: 17px; } #weekly-toggle { padding: 5px; } .day-header { flex-direction: column; gap: 8px; min-height: 142px; padding: 16px 10px; } #day-title { font-size: 38px; } #clock { font-size: 44px; } .message-band { padding: 5px 10px 12px; } .message-heading { flex-wrap: wrap; gap: 0; } #message-source { font-size: 9px; } #sync-status { font-size: 9px; max-width: none; } .header-tools { gap: 0; } .message-body { padding: 3px 0 0; gap: 7px; } #message-symbol { font-size: 23px; } #message-text { font-size: 19px; } .schedule-layout { padding: 12px 10px; overflow: visible; flex: none; } .today-section { max-height: none; overflow: visible; } .event-card { grid-template-columns: 100px minmax(0,1fr); gap: 8px; padding: 10px 0; } .event-time { font-size: 21px; } .event-card h3 { font-size: 22px; } .event-note { grid-column: 2; text-align: left; font-size: 10px; margin-top: -4px; } .status-tag { font-size: 10px; padding: 4px 6px; } .event-departure { grid-column: 2; font-size: 13px; } .upcoming-section { overflow: visible; padding: 0; } .event-row { grid-template-columns: 52px 94px minmax(0,1fr); gap: 5px 7px; padding: 10px 0; } .row-dday { grid-row: 1 / 3; font-size: 13px; width: 52px; } .row-date { font-size: 15px; } .row-date small { font-size: 12px; margin-left: 1px; } .row-time { grid-column: 2; grid-row: 2; font-size: 13px; } .row-title { grid-column: 3; grid-row: 1 / 3; font-size: 17px; } .row-meta { display: none; } .empty-today h3 { font-size: 20px; } footer { padding: 4px 8px; gap: 4px; font-size: 10px; } footer .text-button { font-size: 10px; padding: 0 4px; } #calendar-panel { padding: 12px 8px; } .calendar-toolbar { gap: 8px; } .calendar-cell { padding: 3px; } .calendar-event { font-size: 10px; } .calendar-controls { gap: 0; } .calendar-heading h2 { font-size: 18px; } #facility-panel { right: 10px; } }
-@media (prefers-reduced-motion: reduce) { #bg-wrap *, .clock-colon, .today-event { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { #bg-wrap *, .clock-colon, .today-event, .today-event .row-dday, .today-event .row-dday::before, .today-event .row-dday::after { animation: none !important; } }
 @media (max-width: 620px) { .row-reminder { grid-column: 3; } }
