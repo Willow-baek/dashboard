@@ -1,0 +1,37 @@
+/* Original dashboard weather scene, retained from the existing site. */
+    #bg-wrap{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden;transition:background 4s ease;}
+    #bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+    #lightning{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:rgba(200,220,255,0);transition:background 0.05s;}
+
+    /* ── 태양 ── */
+    #sun{position:absolute;width:96px;height:96px;border-radius:50%;
+      background:radial-gradient(circle at 38% 35%,#fffbe0,#ffe040 45%,#ffaa00 75%,#ff7700);
+      box-shadow:0 0 40px 8px rgba(255,200,0,0.7),0 0 90px 20px rgba(255,150,0,0.4),0 0 160px 40px rgba(255,100,0,0.18);
+      top:48px;right:120px;display:none;animation:sunPulse 5s ease-in-out infinite;overflow:visible;}
+    #sun-rays{position:absolute;top:0;left:0;width:96px;height:96px;animation:raysRotate 28s linear infinite;}
+    .ray{position:absolute;border-radius:3px;background:linear-gradient(to bottom,rgba(255,230,80,0.9),rgba(255,180,0,0.3) 50%,transparent);transform-origin:50% 100%;}
+    @keyframes sunPulse{
+      0%,100%{box-shadow:0 0 40px 8px rgba(255,200,0,0.7),0 0 90px 20px rgba(255,150,0,0.4),0 0 160px 40px rgba(255,100,0,0.18);}
+      50%{box-shadow:0 0 60px 14px rgba(255,220,0,0.85),0 0 120px 30px rgba(255,160,0,0.55),0 0 200px 60px rgba(255,120,0,0.22);}
+    }
+    @keyframes raysRotate{to{transform:rotate(360deg);}}
+
+    /* ── 달 ── */
+    #moon{position:absolute;width:70px;height:70px;border-radius:50%;
+      background:radial-gradient(circle at 38% 35%,#fffff8,#e8e2c8 55%,#c8c0a0);
+      box-shadow:0 0 24px 6px rgba(220,210,170,0.6),0 0 60px 16px rgba(200,190,140,0.28),inset -16px -5px 0 rgba(0,0,0,0.18);
+      top:52px;right:118px;display:none;animation:moonGlow 6s ease-in-out infinite;}
+    @keyframes moonGlow{
+      0%,100%{box-shadow:0 0 24px 6px rgba(220,210,170,0.6),0 0 60px 16px rgba(200,190,140,0.28),inset -16px -5px 0 rgba(0,0,0,0.18);}
+      50%{box-shadow:0 0 36px 10px rgba(230,220,180,0.75),0 0 90px 24px rgba(210,200,150,0.38),inset -16px -5px 0 rgba(0,0,0,0.18);}
+    }
+
+    /* ── 구름 ── */
+    .cloud{position:absolute;animation:cloudDrift linear infinite;filter:blur(0px);}
+    @keyframes cloudDrift{from{transform:translateX(-120%) translateZ(0)}to{transform:translateX(calc(100vw + 120%)) translateZ(0)}}
+
+    /* ── 안개 ── */
+    #fog-wrap{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+    .fog-band{position:absolute;width:220%;height:80px;border-radius:50%;opacity:0;animation:fogDrift linear infinite;}
+    @keyframes fogDrift{from{transform:translateX(-60%)}to{transform:translateX(20%)}}
+

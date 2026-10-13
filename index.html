@@ -6,29 +6,32 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#eef4f7">
   <title>우리 집 대시보드</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="weather-scene.css">
+  <link rel="stylesheet" href="legacy-look.css">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="schedule.js"></script>
+  <script defer src="weather-scene.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
+  <div id="bg-wrap" aria-hidden="true">
+    <div id="sun"><div id="sun-rays"></div></div>
+    <div id="moon"></div>
+    <div id="clouds-wrap"></div>
+    <div id="fog-wrap"></div>
+    <canvas id="bg-canvas"></canvas>
+    <div id="lightning"></div>
+  </div>
   <main id="dashboard">
-    <header class="masthead">
-      <span class="brand"><i data-lucide="house"></i> 우리 집</span>
-      <div class="header-tools">
-        <span id="sync-status" role="status">일정 불러오는 중</span>
-        <button id="sound-toggle" class="icon-button" title="알림 소리 켜기" aria-label="알림 소리 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
-        <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>
-      </div>
-    </header>
-
-    <button id="weekly-toggle" aria-expanded="false" aria-controls="calendar-panel" title="주간 달력 열기">
+    <button id="weekly-toggle" class="card" aria-expanded="false" aria-controls="calendar-panel" title="주간 달력 열기">
       <span id="weekly-row"></span><span class="calendar-indicator"><i data-lucide="calendar-days"></i><i data-lucide="chevron-down"></i></span>
     </button>
 
-    <section id="calendar-panel" hidden aria-label="일정 달력">
+    <section id="calendar-panel" class="card" hidden aria-label="일정 달력">
       <div class="calendar-toolbar">
         <div class="calendar-heading"><h2 id="calendar-title"></h2><span id="calendar-mode-label"></span></div>
         <div class="calendar-controls">
@@ -42,17 +45,24 @@
       <div id="calendar-grid"></div>
     </section>
 
-    <section class="day-header" aria-label="현재 날짜와 시각">
+    <section class="day-header card" aria-label="현재 날짜와 시각">
       <div><p id="full-date"></p><h1 id="day-title">오늘</h1></div>
       <time id="clock"></time>
     </section>
 
-    <section class="message-band" aria-label="오늘의 한마디">
-      <span class="message-icon"><i id="message-symbol" data-lucide="message-circle-heart"></i></span>
-      <div><p id="message-source">오늘의 한마디</p><p id="message-text">오늘 일정 확인하고, 나가기 전에 날씨도 확인해줘.</p></div>
+    <section class="message-band card" aria-label="오늘의 한마디">
+      <div class="message-heading">
+        <p id="message-source">오늘의 한마디</p>
+        <div class="header-tools">
+          <span id="sync-status" role="status">일정 불러오는 중</span>
+          <button id="sound-toggle" class="icon-button" title="알림 소리 켜기" aria-label="알림 소리 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
+          <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>
+        </div>
+      </div>
+      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><p id="message-text">오늘 일정 확인하고, 나가기 전에 날씨도 확인해줘.</p></div>
     </section>
 
-    <div class="schedule-layout">
+    <div class="schedule-layout card">
       <section class="today-section" aria-labelledby="today-heading">
         <div class="section-heading"><h2 id="today-heading">오늘 일정</h2><span id="today-count"></span></div>
         <div id="today-events" class="today-events"><p class="empty">일정을 불러오고 있어요.</p></div>
@@ -66,11 +76,11 @@
       </section>
     </div>
 
-    <footer>
+    <footer class="card">
       <span id="weather-summary"><i data-lucide="cloud-sun"></i><span id="weather-small">서교동 · 날씨 확인 중</span></span>
       <button id="facility-toggle" class="text-button" aria-expanded="false" aria-controls="facility-panel"><i data-lucide="building-2"></i> 시설 안내</button>
     </footer>
-    <aside id="facility-panel" hidden aria-label="시설 안내">
+    <aside id="facility-panel" class="card" hidden aria-label="시설 안내">
       <div><strong>헬스장</strong><span>운영 중단</span></div>
       <div><strong>옥상</strong><span>폐쇄</span></div>
       <div><strong>도서관</strong><span id="library-hours">운영시간 확인 필요</span></div>
@@ -78,7 +88,7 @@
   </main>
 
   <div id="detail-overlay" class="overlay" hidden>
-    <section id="detail-dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabindex="-1">
+    <section id="detail-dialog" class="dialog card" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabindex="-1">
       <button id="detail-close" class="icon-button dialog-close" title="닫기" aria-label="닫기"><i data-lucide="x"></i></button>
       <p id="detail-label" class="eyebrow"></p><h2 id="detail-title"></h2><div id="detail-content"></div>
     </section>

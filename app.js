@@ -91,6 +91,7 @@
     var quote = S.text(state.settings.quote);
     var applicable = !S.text(state.settings.quote_date) || S.date(state.settings.quote_date) === today();
     var freshWeather = state.weatherOK && Date.now() - state.weatherAt < 30 * 60000;
+    $('message-text').style.color = quote && applicable ? state.settings.quote_color || '' : '';
     if (quote && applicable) {
       $('message-text').textContent = quote;
       $('message-source').textContent = '오늘의 한마디' + (S.text(state.settings.author) ? ' · ' + S.text(state.settings.author) : '');
@@ -104,6 +105,7 @@
     return fetchJSON(url).then(function (data) {
       if (!data.current || typeof data.current.temperature_2m !== 'number' || typeof data.current.apparent_temperature !== 'number' || !data.hourly || !Array.isArray(data.hourly.time) || !Array.isArray(data.hourly.precipitation_probability)) throw new Error('Invalid weather');
       state.weather = data; state.weatherAt = Date.now(); state.weatherOK = true;
+      if (window.LegacyTheme) window.LegacyTheme.update(data.current.weather_code,new Date(Date.now() + 9 * 3600000).getUTCHours());
       $('weather-small').textContent = config.locationName + ' · ' + Math.round(data.current.temperature_2m) + '° · 체감 ' + Math.round(data.current.apparent_temperature) + '°';
       renderMessage();
     }).catch(function () {
@@ -113,10 +115,23 @@
   function renderClock() {
     var d = new Date(Date.now() + 9 * 3600000), h = d.getUTCHours();
     $('full-date').textContent = d.getUTCFullYear() + '년 ' + S.dateLabel(today());
-    $('day-title').textContent = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][d.getUTCDay()];
+    $('day-title').textContent = +today().slice(5,7) + '월 ' + +today().slice(8,10) + '일 (' + ['일','월','화','수','목','금','토'][d.getUTCDay()] + ')';
     clear($('clock')); $('clock').appendChild(el('span','ampm',h < 12 ? '오전' : '오후'));
-    $('clock').appendChild(document.createTextNode((h % 12 || 12) + ':' + String(d.getUTCMinutes()).padStart(2,'0')));
+    $('clock').appendChild(document.createTextNode(String(h % 12 || 12)));
+    $('clock').appendChild(el('span','clock-colon',':'));
+    $('clock').appendChild(document.createTextNode(String(d.getUTCMinutes()).padStart(2,'0')));
     $('clock').dateTime = new Date().toISOString();
+    fitHeader();
+  }
+  function fitHeader() {
+    var header = document.querySelector('.day-header');
+    if (!header.getClientRects().length) return;
+    if (window.innerWidth <= 620) { $('day-title').style.fontSize = ''; $('clock').style.fontSize = ''; return; }
+    $('day-title').style.fontSize = '82px'; $('clock').style.fontSize = '82px';
+    var available = header.clientWidth - 50;
+    var required = $('day-title').scrollWidth + $('clock').scrollWidth + 22;
+    var size = Math.min(82,Math.floor(82 * available / required));
+    if (size < 82) { $('day-title').style.fontSize = size + 'px'; $('clock').style.fontSize = size + 'px'; }
   }
   function eventState(e) {
     if (e.cancelled) return { label: '취소', className: '' };
@@ -161,9 +176,14 @@
   }
   function row(e) {
     var button = el('button','event-row');
-    var date = el('span','row-date',shortDate(e.date)); date.appendChild(el('small','',['일','월','화','수','목','금','토'][S.weekday(e.date)] + '요일'));
-    var title = el('span',''); title.appendChild(el('span','row-title',e.title)); title.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
-    button.appendChild(date); button.appendChild(title); button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),S.clockLabel(e.time)));
+    var diff = Math.round((new Date(e.date + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 86400000);
+    var dday = diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : '지난 일정';
+    var date = el('span','row-date',+e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
+    date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
+    button.appendChild(el('span','row-dday',dday)); button.appendChild(date);
+    button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),S.clockLabel(e.time)));
+    button.appendChild(el('span','row-title',e.title));
+    button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
     button.addEventListener('click',function () { openEvent(e); }); return button;
   }
   function renderList(id, events, emptyText) {
@@ -231,7 +251,7 @@
     $('calendar-panel').hidden = state.calendarMode === 0;
     $('weekly-toggle').setAttribute('aria-expanded',String(state.calendarMode !== 0));
     $('weekly-toggle').title = state.calendarMode === 0 ? '주간 달력 열기' : state.calendarMode === 1 ? '월간 달력 열기' : '달력 접기';
-    if (!state.calendarMode) return;
+    if (!state.calendarMode) { fitHeader(); return; }
     var range = calendarBounds();
     var events = S.expand(state.schedules,state.exceptions,range.start,range.end);
     $('calendar-title').textContent = state.calendarMode === 1 ? S.dateLabel(range.start) + ' — ' + shortDate(range.end) : +state.calendarDate.slice(0,4) + '년 ' + +state.calendarDate.slice(5,7) + '월';
@@ -274,6 +294,7 @@
   function renderAll() {
     state.events = S.expand(state.schedules,state.exceptions,S.weekStart(today()),S.addDays(today(),42));
     renderClock(); renderStrip(); renderCalendar(); if (state.loaded) renderSchedules(); renderMessage(); renderFacilities();
+    if (window.LegacyTheme) window.LegacyTheme.update(state.weatherOK && state.weather ? state.weather.current.weather_code : 0,new Date(Date.now() + 9 * 3600000).getUTCHours());
   }
   function openDialog(title,label) {
     if ($('detail-overlay').hidden) state.focus = document.activeElement;
@@ -354,4 +375,6 @@
   setInterval(loadSheet,60000); setInterval(loadWeather,600000);
   document.addEventListener('visibilitychange',function () { if (!document.hidden) { renderAll(); loadSheet(); loadWeather(); } });
   window.addEventListener('online',function () { loadSheet(); loadWeather(); });
+  window.addEventListener('resize',fitHeader);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeader);
 }());
