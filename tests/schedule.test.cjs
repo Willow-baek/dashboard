@@ -101,3 +101,18 @@ test('new Korean sheet rows work without a manual ID and stay stable after reord
   assert.equal(exception.issue,'');
   assert.equal(S.expand(schedules,[exception],'2026-10-19','2026-10-21')[0].time,'10:30');
 });
+test('alerts start exactly at 15 minutes before the appointment, independent of travel time', () => {
+  const events=S.expand([make({date:'2026-10-13',time:'12:20',travel_minutes:'40'})],[],'2026-10-13','2026-10-13');
+  assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T03:04:59Z')).length,0);
+  const due=S.dueAlerts(events,{},new Date('2026-10-13T03:05:00Z'));
+  assert.equal(due.length,1);
+  assert.equal(due[0].mins,15);
+  assert.equal(S.dueAlerts(events,{[due[0].id]:'2026-10-13'},new Date('2026-10-13T03:10:00Z')).length,0);
+  assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T03:20:00Z')).length,0);
+});
+test('cancelled and unconfirmed appointments are silent; late opening uses the actual remaining minutes', () => {
+  const events=S.expand([make({date:'2026-10-13',time:'12:20',title:'💓 코나 심리상담센터'})],[],'2026-10-13','2026-10-13');
+  const due=S.dueAlerts(events,{},new Date('2026-10-13T03:13:00Z'))[0];
+  assert.equal(S.alertSpeech(due),'7분 뒤, 오후 12시 20분에 코나 심리상담센터 일정이 있어. 준비해줘.');
+  assert.equal(S.dueAlerts([{...events[0],cancelled:true},{...events[0],time:''}],{},new Date('2026-10-13T03:13:00Z')).length,0);
+});
