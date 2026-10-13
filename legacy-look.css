@@ -106,6 +106,7 @@ footer #weather-summary { flex: 1; min-width: 0; }
 footer .header-tools { flex-shrink: 0; }
 @media (max-width: 620px) { .package-reminder { grid-column: 2 / -1; font-size: 12px; } }
 footer #refresh.warning { color: var(--urgent-text,#d12424); }
+footer #sound-toggle.needs-activation { color: var(--urgent-text,#d12424); }
 #week-events .event-row { background: rgba(40,120,220,.055); }
 #week-events .row-dday { color: var(--week-text,#1767ad); background: rgba(40,120,220,.14); }
 #week-events .row-time { color: var(--week-text,#1767ad); opacity: .9; }

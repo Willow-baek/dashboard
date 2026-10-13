@@ -7,7 +7,7 @@
   var CACHE = 'home-dashboard-v2';
   var state = { settings: {}, schedules: [], exceptions: [], events: [], loaded: false, savedAt: 0,
     calendarMode: 0, calendarDate: S.seoulKey(new Date()), weather: null, weatherAt: 0, weatherOK: false, weatherStatus: 'loading',
-    busy: false, sound: false, audio: null, speech: [], lastAlertText: '', focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
+    busy: false, sound: true, soundBlocked: false, audio: null, speech: [], lastAlertText: '', focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
   var notified = {};
   function $(id) { return document.getElementById(id); }
   function icons() { if (window.lucide) window.lucide.createIcons(); }
@@ -333,7 +333,12 @@
       state.speech.push(utterance);
       function release() { state.speech = state.speech.filter(function (item) { return item !== utterance; }); }
       utterance.onend = release;
-      utterance.onerror = function (event) { release(); if (state.sound && event.error !== 'canceled' && event.error !== 'interrupted') chime(); };
+      utterance.onerror = function (event) {
+        release();
+        if (!state.sound) return;
+        if (event.error === 'not-allowed') { state.soundBlocked = true; renderSoundButton(); }
+        else if (event.error !== 'canceled' && event.error !== 'interrupted') chime();
+      };
       window.speechSynthesis.speak(utterance);
     } catch (e) { chime(); }
   }
@@ -346,6 +351,25 @@
     $('alert-text').textContent = candidates.map(function (c) { return '시작까지 ' + c.mins + '분 · ' + S.clockLabel(c.event.time); }).join(' / ');
     state.lastAlertText = candidates.map(S.alertSpeech).join(' ');
     $('alert').hidden = false; speak(state.lastAlertText);
+  }
+  function renderSoundButton() {
+    var label = state.sound ? state.soundBlocked ? '음성 알림 활성화' : '음성 알림 끄기' : '음성 알림 켜기';
+    $('sound-toggle').title = label; $('sound-toggle').setAttribute('aria-label',label);
+    $('sound-toggle').setAttribute('aria-pressed',String(state.sound));
+    $('sound-toggle').classList.toggle('needs-activation',state.sound && state.soundBlocked);
+    clear($('sound-toggle')); var icon = el('i');
+    icon.setAttribute('data-lucide',state.sound && !state.soundBlocked ? 'volume-2' : 'volume-x');
+    $('sound-toggle').appendChild(icon); icons();
+  }
+  function activateSound() {
+    if (!state.sound) return;
+    try { if (!state.audio) { var Audio = window.AudioContext || window.webkitAudioContext; if (Audio) state.audio = new Audio(); } } catch (e) {}
+    try { if (state.audio && state.audio.resume) { var resumed = state.audio.resume(); if (resumed && resumed.catch) resumed.catch(function () {}); } } catch (e) {}
+    if (state.soundBlocked) {
+      state.soundBlocked = false; renderSoundButton();
+      var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
+      speak(due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 일정 시작 15분 전에 알려줄게.');
+    }
   }
   $('weekly-toggle').addEventListener('click',function () { if (!state.calendarMode) state.calendarDate = today(); state.calendarMode = (state.calendarMode + 1) % 3; renderCalendar(); });
   $('mode-week').addEventListener('click',function () { state.calendarMode = 1; renderCalendar(); });
@@ -370,16 +394,20 @@
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {
+      if (state.sound && state.soundBlocked) { activateSound(); return; }
       state.sound = !state.sound;
+      store(CACHE + '-sound',state.sound);
       if (state.sound) {
-        try { if (!state.audio) { var Audio = window.AudioContext || window.webkitAudioContext; if (Audio) state.audio = new Audio(); } } catch (e) {}
-        try { if (state.audio && state.audio.resume) { var resumed = state.audio.resume(); if (resumed && resumed.catch) resumed.catch(function () {}); } } catch (e) {}
+        activateSound();
         speak(!$('alert').hidden && state.lastAlertText ? state.lastAlertText : '음성 알림을 켰어. 일정 시작 15분 전에 알려줄게.');
-      } else if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
-      var label = state.sound ? '음성 알림 끄기' : '음성 알림 켜기';
-      $('sound-toggle').title = label; $('sound-toggle').setAttribute('aria-label',label); $('sound-toggle').setAttribute('aria-pressed',String(state.sound));
-      clear($('sound-toggle')); var icon = el('i'); icon.setAttribute('data-lucide',state.sound ? 'volume-2' : 'volume-x'); $('sound-toggle').appendChild(icon); icons();
+      } else { state.soundBlocked = false; if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; } }
+      renderSoundButton();
   });
+  state.sound = read(CACHE + '-sound') !== false;
+  renderSoundButton();
+  function soundGesture(event) { if (!$('sound-toggle').contains(event.target)) activateSound(); }
+  document.addEventListener('click',soundGesture);
+  document.addEventListener('keydown',soundGesture);
   notified = read(CACHE + '-alerts') || {};
   Object.keys(notified).forEach(function (key) { if (notified[key] < S.addDays(today(),-1)) delete notified[key]; });
   var cached = read(CACHE);
