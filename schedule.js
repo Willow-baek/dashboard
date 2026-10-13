@@ -139,6 +139,21 @@
       return true;
     });
   }
+  function dueAlerts(events, notified, now) {
+    return events.filter(function (e) {
+      if (e.cancelled || !e.time) return false;
+      var minutes = minutesUntil(e.date,e.time,now);
+      var key = e.uid + '/' + e.date + '/' + e.time + '/15-start';
+      return minutes > 0 && minutes <= 15 && !Object.prototype.hasOwnProperty.call(notified,key);
+    }).map(function (e) { return { event:e, id:e.uid + '/' + e.date + '/' + e.time + '/15-start', mins:Math.ceil(minutesUntil(e.date,e.time,now)) }; })
+      .sort(function (a,b) { return a.mins - b.mins; });
+  }
+  function alertSpeech(candidate) {
+    var title = candidate.event.title.replace(/[\uD800-\uDFFF\u2600-\u27BF\uFE0F\u200D]/g,'').replace(/\s+/g,' ').trim();
+    var clock = time(candidate.event.time), hour = +clock.slice(0,2), minute = +clock.slice(3);
+    var spokenTime = (hour < 12 ? '오전 ' : '오후 ') + (hour % 12 || 12) + '시' + (minute ? ' ' + minute + '분' : '');
+    return candidate.mins + '분 뒤, ' + spokenTime + '에 ' + title + ' 일정이 있어. 준비해줘.';
+  }
   function weatherComment(data, now, departures) {
     if (!data || !data.current || !data.hourly || !data.hourly.time) return '';
     var nowKey = seoulKey(now);
@@ -176,5 +191,5 @@
   return { text: text, date: date, time: time, dateKey: dateKey, seoulKey: seoulKey, addDays: addDays, weekday: weekday,
     weekStart: weekStart, minutesUntil: minutesUntil, clockLabel: clockLabel, dateLabel: dateLabel,
     dictionary: dictionary, normalize: normalize, legacyRows: legacyRows, legacyExceptions: legacyExceptions,
-    normalizeExceptions: normalizeExceptions, expand: expand, agenda: agenda, weatherComment: weatherComment };
+    normalizeExceptions: normalizeExceptions, expand: expand, agenda: agenda, dueAlerts: dueAlerts, alertSpeech: alertSpeech, weatherComment: weatherComment };
 }));

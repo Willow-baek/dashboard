@@ -7,7 +7,7 @@
   var CACHE = 'home-dashboard-v2';
   var state = { settings: {}, schedules: [], exceptions: [], events: [], loaded: false, savedAt: 0,
     calendarMode: 0, calendarDate: S.seoulKey(new Date()), weather: null, weatherAt: 0, weatherOK: false, weatherStatus: 'loading',
-    busy: false, sound: false, audio: null, focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
+    busy: false, sound: false, audio: null, speech: [], lastAlertText: '', focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
   var notified = {};
   function $(id) { return document.getElementById(id); }
   function icons() { if (window.lucide) window.lucide.createIcons(); }
@@ -301,35 +301,41 @@
   function closeDialog() { $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
   function chime() {
     if (!state.sound || !state.audio) return;
-    state.audio.resume();
-    [523,659,784].forEach(function (freq,i) {
-      var oscillator = state.audio.createOscillator(), gain = state.audio.createGain(), t = state.audio.currentTime + i * .2;
-      oscillator.connect(gain); gain.connect(state.audio.destination); oscillator.frequency.value = freq;
-      gain.gain.setValueAtTime(0,t); gain.gain.linearRampToValueAtTime(.13,t+.02); gain.gain.exponentialRampToValueAtTime(.001,t+.45);
-      oscillator.start(t); oscillator.stop(t+.5);
-    });
+    try {
+      if (state.audio.resume) { var resumed = state.audio.resume(); if (resumed && resumed.catch) resumed.catch(function () {}); }
+      [523,659,784].forEach(function (freq,i) {
+        var oscillator = state.audio.createOscillator(), gain = state.audio.createGain(), t = state.audio.currentTime + i * .2;
+        oscillator.connect(gain); gain.connect(state.audio.destination); oscillator.frequency.value = freq;
+        gain.gain.setValueAtTime(0,t); gain.gain.linearRampToValueAtTime(.13,t+.02); gain.gain.exponentialRampToValueAtTime(.001,t+.45);
+        oscillator.start(t); oscillator.stop(t+.5);
+      });
+    } catch (e) {}
+  }
+  function speak(text) {
+    if (!state.sound) return;
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { chime(); return; }
+    try {
+      var utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR'; utterance.rate = .95; utterance.pitch = 1; utterance.volume = 1;
+      var voices = window.speechSynthesis.getVoices().filter(function (voice) { return /^ko(?:-|$)/i.test(voice.lang.replace('_','-')); });
+      var local = voices.filter(function (voice) { return voice.localService; });
+      if (voices.length) utterance.voice = local[0] || voices[0];
+      state.speech.push(utterance);
+      function release() { state.speech = state.speech.filter(function (item) { return item !== utterance; }); }
+      utterance.onend = release;
+      utterance.onerror = function (event) { release(); if (state.sound && event.error !== 'canceled' && event.error !== 'interrupted') chime(); };
+      window.speechSynthesis.speak(utterance);
+    } catch (e) { chime(); }
   }
   function checkAlerts() {
     if (!state.loaded || !state.sheetOK || Date.now() - state.savedAt > 5 * 60000) return;
-    var candidates = [];
-    upcoming().forEach(function (e) {
-      if (!e.time) return;
-      var appointment = S.minutesUntil(e.date,e.time,now());
-      var leave = appointment - e.travel;
-      [30,10].forEach(function (threshold) {
-        var id = e.uid + '/' + e.date + '/' + e.time + '/' + e.travel + '/' + threshold;
-        if (leave > 0 && leave <= threshold && !notified[id]) candidates.push({ event: e, id: id, mins: Math.ceil(leave), leave: true, threshold: threshold });
-      });
-      var lateId = e.uid + '/' + e.date + '/' + e.time + '/' + e.travel + '/leave';
-      if (e.travel && leave <= 0 && appointment > 0 && !notified[lateId]) candidates.push({ event: e, id: lateId, mins: Math.ceil(appointment), leave: false, threshold: 0 });
-    });
-    candidates.sort(function (a,b) { return a.mins - b.mins || a.threshold - b.threshold; });
+    var candidates = S.dueAlerts(state.events,notified,now());
     if (!candidates.length) return;
-    var winner = candidates[0];
-    candidates.filter(function (c) { return c.event.uid === winner.event.uid; }).forEach(function (c) { notified[c.id] = today(); }); store(CACHE + '-alerts',notified);
-    $('alert-title').textContent = winner.event.title;
-    $('alert-text').textContent = winner.leave ? (winner.event.travel ? '출발까지 ' : '시작까지 ') + winner.mins + '분 · ' + S.clockLabel(winner.event.time) + ' 일정' : '출발할 시간이야. 일정 시작까지 ' + winner.mins + '분 남았어.';
-    $('alert').hidden = false; chime();
+    candidates.forEach(function (c) { notified[c.id] = today(); }); store(CACHE + '-alerts',notified);
+    $('alert-title').textContent = candidates.map(function (c) { return c.event.title; }).join(' · ');
+    $('alert-text').textContent = candidates.map(function (c) { return '시작까지 ' + c.mins + '분 · ' + S.clockLabel(c.event.time); }).join(' / ');
+    state.lastAlertText = candidates.map(S.alertSpeech).join(' ');
+    $('alert').hidden = false; speak(state.lastAlertText);
   }
   $('weekly-toggle').addEventListener('click',function () { if (!state.calendarMode) state.calendarDate = today(); state.calendarMode = (state.calendarMode + 1) % 3; renderCalendar(); });
   $('mode-week').addEventListener('click',function () { state.calendarMode = 1; renderCalendar(); });
@@ -354,20 +360,23 @@
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {
-    try {
-      if (!state.audio) { var Audio = window.AudioContext || window.webkitAudioContext; state.audio = new Audio(); }
-      state.sound = !state.sound; if (state.sound) { state.audio.resume(); chime(); }
-      var label = state.sound ? '알림 소리 끄기' : '알림 소리 켜기';
+      state.sound = !state.sound;
+      if (state.sound) {
+        try { if (!state.audio) { var Audio = window.AudioContext || window.webkitAudioContext; if (Audio) state.audio = new Audio(); } } catch (e) {}
+        try { if (state.audio && state.audio.resume) { var resumed = state.audio.resume(); if (resumed && resumed.catch) resumed.catch(function () {}); } } catch (e) {}
+        speak(!$('alert').hidden && state.lastAlertText ? state.lastAlertText : '음성 알림을 켰어. 일정 시작 15분 전에 알려줄게.');
+      } else if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
+      var label = state.sound ? '음성 알림 끄기' : '음성 알림 켜기';
       $('sound-toggle').title = label; $('sound-toggle').setAttribute('aria-label',label); $('sound-toggle').setAttribute('aria-pressed',String(state.sound));
       clear($('sound-toggle')); var icon = el('i'); icon.setAttribute('data-lucide',state.sound ? 'volume-2' : 'volume-x'); $('sound-toggle').appendChild(icon); icons();
-    } catch (e) { $('sound-toggle').title = '이 기기에서 소리를 켤 수 없어요'; }
   });
   notified = read(CACHE + '-alerts') || {};
   Object.keys(notified).forEach(function (key) { if (notified[key] < S.addDays(today(),-1)) delete notified[key]; });
   var cached = read(CACHE);
   if (cached && Array.isArray(cached.rows) && cached.savedAt) { try { hydrate(cached); updateSync(true); } catch (e) {} }
   renderAll(); icons(); loadSheet(); loadWeather();
-  setInterval(function () { renderAll(); updateSync(false); checkAlerts(); },30000);
+  setInterval(function () { renderAll(); updateSync(false); },30000);
+  setInterval(checkAlerts,10000);
   setInterval(loadSheet,60000); setInterval(loadWeather,600000);
   document.addEventListener('visibilitychange',function () { if (!document.hidden) { renderAll(); loadSheet(); loadWeather(); } });
   window.addEventListener('online',function () { loadSheet(); loadWeather(); });
