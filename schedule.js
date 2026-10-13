@@ -59,6 +59,9 @@
       title: title, date: anchor,
       time: time(field(row, ['time','기본 시간','기본시간','시간'])), weeks: weeks,
       variable: /매회|확인|variable/i.test(mode),
+      packageSize: Math.min(100, Math.max(0, parseInt(field(row, ['package_size','묶음횟수']),10) || 0)),
+      packageStart: date(field(row, ['package_start','결제묶음시작일'])),
+      paidOn: date(field(row, ['paid_on','결제일'])),
       memo: field(row, ['memo','메모']), contact: field(row, ['contact','연락처']),
       travel: Math.min(360, Math.max(0, parseInt(field(row, ['travel_minutes','이동시간','준비·이동시간']), 10) || 0)),
       end: date(field(row, ['end_date','종료일'])), active: !/^(true|1|중단)$/i.test(paused) && !/^(false|0|중단|아니오|off)$/i.test(active),
@@ -100,7 +103,7 @@
       return result;
     });
   }
-  function expand(schedules, exceptions, start, end) {
+  function expandRaw(schedules, exceptions, start, end) {
     var lookup = {};
     exceptions.forEach(function (e) { if (e.id && e.original) lookup[e.id + '/' + e.original] = e; });
     var results = [];
@@ -128,6 +131,30 @@
       });
     });
     return results.sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); });
+  }
+  function expand(schedules, exceptions, start, end) {
+    var results = expandRaw(schedules, exceptions, start, end);
+    schedules.filter(function (s) { return s.packageSize && s.packageStart && s.weeks > 0; }).forEach(function (s) {
+      // Count scheduled, non-cancelled lessons from the paid package's first lesson,
+      // including history outside the displayed week and actual rescheduled dates.
+      var historySchedule = Object.assign({},s,{date: s.date < s.packageStart ? s.date : s.packageStart});
+      var historyStart = s.packageStart;
+      exceptions.forEach(function (e) { if (e.id === s.id && e.original >= s.packageStart && e.date && e.date < historyStart) historyStart = e.date; });
+      var history = expandRaw([historySchedule],exceptions,historyStart,addDays(end,s.weeks * 7 * (s.packageSize + 1)))
+        .filter(function (e) { return !e.cancelled && e.original >= s.packageStart; });
+      var counts = {};
+      history.forEach(function (e,i) {
+        var cycle = Math.floor(i / s.packageSize), lesson = i % s.packageSize + 1;
+        counts[e.uid] = { lesson:lesson, size:s.packageSize, paid:cycle === 0 && !!s.paidOn,
+          paidOn:cycle === 0 ? s.paidOn : '', nextDate:history[(cycle + 1) * s.packageSize] ? history[(cycle + 1) * s.packageSize].date : '' };
+      });
+      results.forEach(function (e) {
+        if (e.id !== s.id || !counts[e.uid]) return;
+        e.package = counts[e.uid];
+        e.title = e.title.replace(/\s*\(\d+\s*\/\s*\d+\)\s*$/,'').trim() + ' (' + e.package.lesson + '/' + e.package.size + ')';
+      });
+    });
+    return results;
   }
   function agenda(events, now) {
     var today = seoulKey(now), seen = {};

@@ -9,13 +9,13 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css">
+  <link rel="stylesheet" href="legacy-look.css?v=20261013-packages">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
   <script defer src="config.js"></script>
-  <script defer src="schedule.js?v=20261013-alert15"></script>
+  <script defer src="schedule.js?v=20261013-packages"></script>
   <script defer src="weather-scene.js"></script>
-  <script defer src="app.js?v=20261013-alert15"></script>
+  <script defer src="app.js?v=20261013-packages"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -51,20 +51,14 @@
     </section>
 
     <section class="message-band card" aria-label="오늘의 한마디">
-      <div class="message-heading">
-        <p id="message-source">오늘의 한마디</p>
-        <div class="header-tools">
-          <span id="sync-status" role="status">일정 불러오는 중</span>
-          <button id="sound-toggle" class="icon-button" title="음성 알림 켜기" aria-label="음성 알림 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
-          <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>
-        </div>
-      </div>
+      <p id="message-source" hidden>오늘의 한마디</p>
+      <span id="sync-status" class="sr-only" role="status">일정 불러오는 중</span>
       <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div>
     </section>
 
     <div class="schedule-layout card">
       <section class="today-section" aria-labelledby="today-heading">
-        <div class="section-heading"><h2 id="today-heading">오늘 일정</h2><span id="today-count"></span></div>
+        <div hidden><h2 id="today-heading">오늘 일정</h2><span id="today-count"></span></div>
         <div id="today-events" class="today-events"><p class="empty">일정을 불러오고 있어요.</p></div>
       </section>
       <section class="upcoming-section" aria-label="다가오는 일정">
@@ -79,6 +73,10 @@
     <footer class="card">
       <span id="weather-summary"><i data-lucide="cloud-sun"></i><span id="weather-small">서교동 · 날씨 확인 중</span></span>
       <button id="facility-toggle" class="text-button" aria-expanded="false" aria-controls="facility-panel"><i data-lucide="building-2"></i> 시설 안내</button>
+      <div class="header-tools">
+        <button id="sound-toggle" class="icon-button" title="음성 알림 켜기" aria-label="음성 알림 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
+        <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>
+      </div>
     </footer>
     <aside id="facility-panel" class="card" hidden aria-label="시설 안내">
       <div><strong>헬스장</strong><span>운영 중단</span></div>
