@@ -254,7 +254,8 @@
     events.forEach(function (e) { var button = row(e); if (e.cancelled) { button.style.opacity = '.55'; button.querySelector('.row-meta').textContent = '취소'; } $('detail-content').appendChild(button); });
   }
   function renderCalendar() {
-    $('dashboard').classList.toggle('calendar-open',state.calendarMode !== 0);
+    $('dashboard').classList.toggle('calendar-open',state.calendarMode === 2);
+    $('dashboard').classList.toggle('calendar-week',state.calendarMode === 1);
     $('calendar-panel').hidden = state.calendarMode === 0;
     $('weekly-toggle').setAttribute('aria-expanded',String(state.calendarMode !== 0));
     $('weekly-toggle').title = state.calendarMode === 0 ? '주간 달력 열기' : state.calendarMode === 1 ? '월간 달력 열기' : '달력 접기';
@@ -285,6 +286,7 @@
         grid.appendChild(cell);
       }(S.addDays(range.start,i)));
     }
+    fitHeader();
   }
   function moveCalendar(direction) {
     if (state.calendarMode === 1) state.calendarDate = S.addDays(state.calendarDate,direction * 7);
