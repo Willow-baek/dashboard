@@ -135,6 +135,15 @@ footer .text-button { font-size: 12px; min-height: 34px; }
 .calendar-event.unconfirmed { background: rgba(220,165,50,.17); border-color: #caa451; }
 .calendar-event.cancelled { background: rgba(128,128,128,.07); }
 .calendar-more { color: inherit; opacity: .65; }
+#dashboard.calendar-week #calendar-panel { flex: none; max-height: 32vh; padding: 10px 12px; }
+#dashboard.calendar-week #calendar-grid { flex: none; grid-template-rows: 26px; grid-auto-rows: auto; }
+#dashboard.calendar-week .calendar-cell { min-height: 48px; padding: 5px; }
+#dashboard.calendar-week .calendar-toolbar { margin-bottom: 6px; }
+#dashboard.calendar-week .calendar-heading h2 { font-size: 18px; }
+#dashboard.calendar-week #calendar-mode-label { display: none; }
+#dashboard.calendar-week .calendar-weekday { padding: 5px; }
+@media (min-height: 900px) { #dashboard.calendar-week #calendar-panel { max-height: 288px; } }
+@media (max-width: 620px) { #dashboard.calendar-week #calendar-panel { max-height: none; } }
 .dialog { background: var(--theme-card); border-radius: 24px; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); }
 .eyebrow, .detail-line small { color: inherit; opacity: .65; }
 .detail-line a { color: inherit; }
