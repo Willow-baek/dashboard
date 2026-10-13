@@ -6,7 +6,7 @@
   var BASE = 'https://opensheet.elk.sh/' + SHEET_ID + '/';
   var CACHE = 'home-dashboard-v2';
   var state = { settings: {}, schedules: [], exceptions: [], events: [], loaded: false, savedAt: 0,
-    calendarMode: 0, calendarDate: S.seoulKey(new Date()), weather: null, weatherAt: 0, weatherOK: false,
+    calendarMode: 0, calendarDate: S.seoulKey(new Date()), weather: null, weatherAt: 0, weatherOK: false, weatherStatus: 'loading',
     busy: false, sound: false, audio: null, focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
   var notified = {};
   function $(id) { return document.getElementById(id); }
@@ -96,8 +96,9 @@
       $('message-text').textContent = quote;
       $('message-source').textContent = '오늘의 한마디' + (S.text(state.settings.author) ? ' · ' + S.text(state.settings.author) : '');
     } else {
-      $('message-text').textContent = freshWeather && S.weatherComment(state.weather, now(), departures()) || '오늘 일정 확인하고, 나가기 전에 날씨도 확인해줘.';
-      $('message-source').textContent = freshWeather ? '오늘의 한마디 · 날씨를 보고' : '오늘의 한마디';
+      var advice = freshWeather && S.weatherComment(state.weather, now(), departures());
+      $('message-text').textContent = advice || (state.weatherStatus === 'loading' ? '날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.' : '날씨 정보를 지금 확인하지 못했어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.');
+      $('message-source').textContent = advice ? '오늘의 한마디 · 날씨를 보고' : state.weatherStatus === 'loading' ? '오늘의 한마디 · 날씨 확인 중' : '오늘의 한마디 · 날씨 확인 필요';
     }
   }
   function loadWeather() {
@@ -105,11 +106,12 @@
     return fetchJSON(url).then(function (data) {
       if (!data.current || typeof data.current.temperature_2m !== 'number' || typeof data.current.apparent_temperature !== 'number' || !data.hourly || !Array.isArray(data.hourly.time) || !Array.isArray(data.hourly.precipitation_probability)) throw new Error('Invalid weather');
       state.weather = data; state.weatherAt = Date.now(); state.weatherOK = true;
+      state.weatherStatus = 'ready';
       if (window.LegacyTheme) window.LegacyTheme.update(data.current.weather_code,new Date(Date.now() + 9 * 3600000).getUTCHours());
       $('weather-small').textContent = config.locationName + ' · ' + Math.round(data.current.temperature_2m) + '° · 체감 ' + Math.round(data.current.apparent_temperature) + '°';
       renderMessage();
     }).catch(function () {
-      state.weatherOK = false; $('weather-small').textContent = config.locationName + ' · 날씨 연결 확인 필요'; renderMessage();
+      state.weatherOK = false; state.weatherStatus = 'error'; $('weather-small').textContent = config.locationName + ' · 날씨 연결 확인 필요'; renderMessage();
     });
   }
   function renderClock() {

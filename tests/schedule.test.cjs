@@ -79,3 +79,14 @@ test('rain earlier today does not trigger an umbrella message for a dry remainin
   data.hourly.apparent_temperature=times.map(()=>2);
   assert.equal(S.weatherComment(data,new Date('2026-10-13T03:00:00Z'),[]).includes('따뜻한 겉옷'),true);
 });
+test('ordinary dry weather still produces clothing advice instead of an unrelated schedule reminder', () => {
+  const data = { current:{apparent_temperature:19,weather_code:0}, hourly:{time:['2026-10-13T12:00'],precipitation_probability:[0],apparent_temperature:[19],wind_speed_10m:[5]} };
+  const now = new Date('2026-10-13T03:00:00Z');
+  assert.ok(S.weatherComment(data,now,[]).includes('얇은 겉옷'));
+  data.current.apparent_temperature=22; data.hourly.apparent_temperature=[22];
+  assert.ok(S.weatherComment(data,now,[]).includes('온화'));
+  data.current.apparent_temperature=25; data.hourly.apparent_temperature=[25];
+  assert.ok(S.weatherComment(data,now,[]).includes('가벼운 옷차림'));
+  data.hourly.time=['2026-10-12T12:00'];
+  assert.ok(S.weatherComment(data,now,[]).includes('가벼운 옷차림'));
+});

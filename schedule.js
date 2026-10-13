@@ -145,7 +145,7 @@
       return departures.some(function (departure) { return Math.abs(new Date(data.hourly.time[i] + ':00+09:00') - departure) <= 2 * 3600000; });
     });
     var selected = tripWindows.length ? tripWindows : windows;
-    if (!selected.length || typeof current !== 'number') return '';
+    if (typeof current !== 'number' || !isFinite(current)) return '';
     var probabilities = selected.map(function (i) { return (data.hourly.precipitation_probability || [])[i]; }).filter(function (n) { return typeof n === 'number'; });
     var feels = selected.map(function (i) { return (data.hourly.apparent_temperature || [])[i]; }).filter(function (n) { return typeof n === 'number'; });
     var wind = selected.map(function (i) { return (data.hourly.wind_speed_10m || [])[i]; }).filter(function (n) { return typeof n === 'number'; });
@@ -160,8 +160,10 @@
     if (minFeel <= 3) lines.push('밖에 많이 추워. 따뜻한 겉옷 입고 가.');
     else if (minFeel <= 12) lines.push('밖에 쌀쌀해. 겉옷 하나 챙겨가.');
     else if (current >= 28) lines.push('밖에 많이 더워. 물 챙기고 쉬어가.');
+    else if (minFeel <= 20) lines.push('밖이 선선해. 얇은 겉옷 하나 챙겨가.');
+    else if (current >= 24) lines.push('밖이 조금 더울 수 있어. 가벼운 옷차림으로 나가고 물도 챙겨가.');
+    else lines.push('밖은 비교적 온화해. 편한 옷차림으로 나가도 괜찮겠어.');
     if (maxWind >= 30 && lines.length < 2) lines.push('바람이 세게 불 수 있어. 나갈 때 조심해.');
-    if (!lines.length) lines.push('외출 전 소지품 챙기고, 오늘 일정도 한 번 확인해줘.');
     return lines.slice(0,2).join(' ');
   }
   return { text: text, date: date, time: time, dateKey: dateKey, seoulKey: seoulKey, addDays: addDays, weekday: weekday,
