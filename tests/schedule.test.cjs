@@ -1,0 +1,64 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const S = require('../schedule.js');
+const make = (fields) => S.normalize({ id: 'a', title: '상담', date: '2026-10-07', time: '11:00', repeat: '2주마다', ...fields });
+
+test('Korean dates stay correct before 09:00 and times accept a single hour digit', () => {
+  assert.equal(S.seoulKey(new Date('2026-10-12T16:00:00Z')), '2026-10-13');
+  assert.equal(S.time('9:30'), '09:30');
+  assert.equal(S.clockLabel('9:30'), '오전 9:30');
+  assert.equal(S.date('2026-02-30'), '');
+  assert.equal(S.time('25:00'), '');
+});
+test('weekly and fortnightly recurrence continues after the anchor date', () => {
+  const events = S.expand([make({})], [], '2026-10-12', '2026-11-30');
+  assert.deepEqual(events.map(e => e.date), ['2026-10-21','2026-11-04','2026-11-18']);
+  assert.deepEqual(S.expand([make({ repeat: '1주마다' })], [], '2026-10-12', '2026-10-25').map(e => e.date), ['2026-10-14','2026-10-21']);
+});
+test('one cancellation and one move leave subsequent recurrence unchanged', () => {
+  const overrides = S.normalizeExceptions([
+    { event_id: 'a', original_date: '2026-10-21', action: '취소' },
+    { event_id: 'a', original_date: '2026-11-04', action: '변경', date: '2026-11-05', time: '9:30' }
+  ]);
+  const events = S.expand([make({})], overrides, '2026-10-12', '2026-11-30');
+  assert.equal(events[0].cancelled, true);
+  assert.equal(events[1].date, '2026-11-05');
+  assert.equal(events[1].time, '09:30');
+  assert.equal(events[2].date, '2026-11-18');
+});
+test('a rescheduled occurrence moved into a different calendar range is included', () => {
+  const overrides = S.normalizeExceptions([{ event_id:'a', original_date:'2026-10-21', action:'변경', date:'2026-11-01' }]);
+  assert.equal(S.expand([make({})],overrides,'2026-11-01','2026-11-01')[0].original,'2026-10-21');
+});
+test('variable times use the anchor reservation only, then require per-visit confirmation', () => {
+  const events = S.expand([make({ time_mode: '매회 확인' })], S.normalizeExceptions([{ event_id:'a', original_date:'2026-11-04', action:'시간 확정', time:'15:30' }]), '2026-10-07','2026-11-18');
+  assert.deepEqual(events.map(e => e.time), ['11:00','','15:30','']);
+  assert.equal(events[1].needsTime,true);
+});
+test('end dates, inactive schedules, missing dates and unsupported rules are handled', () => {
+  assert.equal(S.expand([make({ end_date:'2026-10-21' })],[],'2026-10-01','2026-12-31').length,2);
+  assert.equal(S.expand([make({ active:'중단' })],[],'2026-10-01','2026-12-31').length,0);
+  assert.equal(make({ date:'' }).issue,'예약 날짜 확인 필요');
+  assert.equal(make({ repeat:'매월' }).issue,'반복 규칙 확인 필요');
+});
+test('single events remain single and schedules are not limited to ten', () => {
+  assert.equal(S.expand([make({ repeat:'' })],[],'2026-10-01','2026-12-31').length,1);
+  const rows = S.legacyRows({ event15_title:'치과', event15_date:'2026-10-19', event15_time:'9:30' });
+  assert.equal(rows[0].id,'event15');
+});
+test('malformed exceptions are identified rather than silently reusing the original reservation', () => {
+  assert.equal(S.normalizeExceptions([{event_id:'a',original_date:'2026-10-21',action:'변경',time:'99:30'}])[0].issue,'변경사항 입력 확인 필요');
+  assert.equal(S.normalizeExceptions([{event_id:'a',original_date:'2026-10-21',action:'변경',date:'2026-02-30'}])[0].issue,'변경사항 입력 확인 필요');
+  assert.equal(S.normalizeExceptions([{event_id:'a',original_date:'2026-10-21',action:'취소'}])[0].issue,'');
+});
+test('rain earlier today does not trigger an umbrella message for a dry remaining day', () => {
+  const times = Array.from({length:24},(_,i) => '2026-10-13T' + String(i).padStart(2,'0') + ':00');
+  const data = { current:{apparent_temperature:20,weather_code:0}, hourly:{time:times,precipitation_probability:times.map((_,i)=>i<7?95:0),apparent_temperature:times.map(()=>20),wind_speed_10m:times.map(()=>5)} };
+  const comment = S.weatherComment(data,new Date('2026-10-13T03:00:00Z'),[]);
+  assert.equal(comment.includes('우산'),false);
+  data.hourly.precipitation_probability[14]=80;
+  assert.equal(S.weatherComment(data,new Date('2026-10-13T03:00:00Z'),[new Date('2026-10-13T05:00:00Z')]).includes('외출할 때 비'),true);
+  data.current.apparent_temperature=2;
+  data.hourly.apparent_temperature=times.map(()=>2);
+  assert.equal(S.weatherComment(data,new Date('2026-10-13T03:00:00Z'),[]).includes('따뜻한 겉옷'),true);
+});
