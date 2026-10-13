@@ -24,11 +24,12 @@ body { color: var(--ink); }
 #clock .ampm { font-family: -apple-system,BlinkMacSystemFont,sans-serif; font-size: .5em; font-weight: 800; color: inherit; opacity: 1; margin-right: 4px; }
 .clock-colon { animation: colonBlink 1s step-end infinite; }
 @keyframes colonBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
-.message-band { display: block; margin: 0; padding: 5px 16px 12px; border-left: 1px solid rgba(255,255,255,.12); }
+.message-band { display: block; margin: 0; padding: 8px 16px; border-left: 1px solid rgba(255,255,255,.12); }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .message-heading { display: flex; justify-content: space-between; align-items: center; min-height: 26px; gap: 8px; }
 #message-source { color: inherit; opacity: .55; font-size: 10px; margin: 0; flex-shrink: 0; }
 .header-tools { gap: 2px; }
-.header-tools .icon-button { width: 28px; height: 28px; }
+.header-tools .icon-button { width: 40px; height: 40px; }
 .header-tools svg { width: 15px; height: 15px; }
 #sync-status { color: inherit; opacity: .6; font-size: 10px; margin-right: 3px; }
 #sync-status.warning { color: inherit; opacity: .85; }
@@ -100,6 +101,11 @@ body { color: var(--ink); }
 .today-event.urgent { background: rgba(210,45,45,.12); }
 .today-event.past { opacity: .55; }
 .row-reminder { grid-column: 4 / -1; color: var(--urgent-text,#d12424); font-size: 13px; }
+.package-reminder { grid-column: 4 / -1; color: var(--urgent-text,#d12424); font-size: 14px; font-weight: 600; }
+footer #weather-summary { flex: 1; min-width: 0; }
+footer .header-tools { flex-shrink: 0; }
+@media (max-width: 620px) { .package-reminder { grid-column: 2 / -1; font-size: 12px; } }
+footer #refresh.warning { color: var(--urgent-text,#d12424); }
 #week-events .event-row { background: rgba(40,120,220,.055); }
 #week-events .row-dday { color: var(--week-text,#1767ad); background: rgba(40,120,220,.14); }
 #week-events .row-time { color: var(--week-text,#1767ad); opacity: .9; }

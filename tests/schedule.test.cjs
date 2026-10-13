@@ -2,6 +2,34 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const S = require('../schedule.js');
 const make = (fields) => S.normalize({ id: 'a', title: '상담', date: '2026-10-07', time: '11:00', repeat: '2주마다', ...fields });
+const lesson = (fields = {}) => make({title:'와이랩 수업(2/4)',date:'2026-10-04',repeat:'1주마다',묶음횟수:'4',결제묶음시작일:'2026-10-04',결제일:'2026-09-30',...fields});
+
+test('package count includes previous lessons but does not assume the next payment', () => {
+  const events = S.expand([lesson()],[],'2026-10-12','2026-11-08');
+  assert.deepEqual(events.map(e=>e.package.lesson),[3,4,1,2]);
+  assert.deepEqual(events.map(e=>e.package.paid),[true,true,false,false]);
+  assert.equal(events[0].title,'와이랩 수업 (3/4)');
+  assert.equal(events[1].package.nextDate,'2026-11-01');
+  const renewed = S.expand([lesson({결제묶음시작일:'2026-11-01',결제일:'2026-10-30'})],[],'2026-11-01','2026-11-01')[0];
+  assert.equal(renewed.package.lesson,1);
+  assert.equal(renewed.package.paid,true);
+});
+test('cancelled lessons do not consume a package and rescheduled lessons count once', () => {
+  const exceptions = S.normalizeExceptions([
+    {event_id:'a',original_date:'2026-10-11',action:'취소'},
+    {event_id:'a',original_date:'2026-10-18',action:'변경',date:'2026-10-20'}
+  ]);
+  const events = S.expand([lesson()],exceptions,'2026-10-01','2026-11-08');
+  assert.equal(events.find(e=>e.date==='2026-10-11').package,undefined);
+  assert.equal(events.find(e=>e.date==='2026-10-20').package.lesson,2);
+  assert.equal(events.find(e=>e.date==='2026-11-01').package.lesson,4);
+  assert.equal(events.find(e=>e.date==='2026-11-01').package.nextDate,'2026-11-08');
+});
+test('an anchor lesson moved earlier still belongs to the paid package', () => {
+  const exceptions = S.normalizeExceptions([{event_id:'a',original_date:'2026-10-04',action:'변경',date:'2026-10-03'}]);
+  const events = S.expand([lesson()],exceptions,'2026-10-01','2026-10-18');
+  assert.deepEqual(events.map(e=>e.package.lesson),[1,2,3]);
+});
 
 test('Korean dates stay correct before 09:00 and times accept a single hour digit', () => {
   assert.equal(S.seoulKey(new Date('2026-10-12T16:00:00Z')), '2026-10-13');

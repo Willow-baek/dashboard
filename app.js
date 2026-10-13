@@ -30,12 +30,14 @@
     failed = failed || !state.sheetOK;
     var age = state.savedAt ? Math.max(0, Math.floor((Date.now() - state.savedAt) / 60000)) : 0;
     var warning = failed || age >= 2 || state.warned;
-    $('sync-status').className = warning ? 'warning' : '';
+    $('sync-status').className = 'sr-only' + (warning ? ' warning' : '');
     if (!state.loaded) $('sync-status').textContent = failed ? state.failureReason + ' 필요 · 새로고침' : '일정 불러오는 중';
     else {
       var stamp = new Date(state.savedAt + 9 * 3600000);
       $('sync-status').textContent = (failed || age >= 2 ? state.failureReason + ' · ' : state.warned ? '예약·입력 확인 · ' : '') + '마지막 갱신 ' + String(stamp.getUTCHours()).padStart(2,'0') + ':' + String(stamp.getUTCMinutes()).padStart(2,'0') + (age >= 60 ? ' (' + S.dateLabel(S.seoulKey(new Date(state.savedAt))) + ')' : '');
     }
+    $('refresh').classList.toggle('warning',warning);
+    $('refresh').title = '새로고침 · ' + $('sync-status').textContent;
   }
   function hydrate(payload) {
     var allSchedules = (payload.rows || []).map(S.normalize).filter(function (s) { return s.title; });
@@ -149,6 +151,11 @@
   function openEvent(e) {
     openDialog(e.title, e.cancelled ? '취소된 일정' : e.changed ? '변경된 일정' : repeatLabel(e));
     detailLine('날짜', S.dateLabel(e.date)); detailLine('시간', S.clockLabel(e.time));
+    if (e.package) {
+      detailLine('수업 회차',e.package.lesson + '/' + e.package.size + ' · 예정 수업 기준');
+      detailLine('결제',e.package.paid ? S.dateLabel(e.package.paidOn) + ' 결제한 묶음' : '이 묶음 결제 확인 필요');
+      if (e.package.nextDate) detailLine('다음 묶음',S.dateLabel(e.package.nextDate) + ' 수업 전 결제 필요');
+    }
     if (e.changed && e.date !== e.original) detailLine('원래 날짜', S.dateLabel(e.original));
     if (e.travel && e.time && !e.cancelled) {
       var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
@@ -173,6 +180,9 @@
     button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),S.clockLabel(e.time)));
     button.appendChild(el('span','row-title',e.title));
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
+    if (e.package && (!e.package.paid || e.package.lesson === e.package.size)) {
+      button.appendChild(el('span','package-reminder',!e.package.paid ? '이번 묶음 결제 확인 필요' : e.package.nextDate ? S.dateLabel(e.package.nextDate) + ' 수업 전 다음 묶음 결제' : '이번 묶음 마지막 수업'));
+    }
     if (isToday && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
       var reminder = status.className === 'urgent' || status.className === 'past' ? status.label : '';
       if (e.travel && e.time && status.className !== 'past') {
