@@ -54,11 +54,13 @@
     var active = field(row, ['active','사용']);
     var title = field(row, ['title','일정','일정명']);
     var paused = field(row, ['중단']);
+    var alerts = field(row, ['alerts','알림','알람']);
     return {
       id: field(row, ['id','ID','일정ID']) || 'auto:' + title,
       title: title, date: anchor,
       time: time(field(row, ['time','기본 시간','기본시간','시간'])), weeks: weeks,
       variable: /매회|확인|variable/i.test(mode),
+      alerts: alerts ? !/^(false|0|아니오|off)$/i.test(alerts) : !/아카데미|academy|방문|오는\s*날/i.test(title),
       packageSize: Math.min(100, Math.max(0, parseInt(field(row, ['package_size','묶음횟수']),10) || 0)),
       packageStart: date(field(row, ['package_start','결제묶음시작일'])),
       paidOn: date(field(row, ['paid_on','결제일'])),
@@ -73,7 +75,7 @@
     Object.keys(data).forEach(function (key) { var m = key.match(/^event(\d+)_/); if (m) indices[m[1]] = true; });
     return Object.keys(indices).sort(function (a,b) { return +a - +b; }).map(function (index) {
       var row = { id: 'event' + index };
-      ['date','time','title','repeat','memo','contact','time_mode','travel_minutes','end_date','active'].forEach(function (key) { row[key] = data['event' + index + '_' + key] || ''; });
+      ['date','time','title','repeat','memo','contact','time_mode','travel_minutes','end_date','active','alerts'].forEach(function (key) { row[key] = data['event' + index + '_' + key] || ''; });
       return row;
     });
   }
@@ -127,7 +129,7 @@
         if (actual < start || actual > end) return;
         results.push({ uid: s.id + '/' + original, id: s.id, original: original, date: actual, time: clock,
           title: s.title, weeks: s.weeks, memo: override && override.memo || s.memo, contact: s.contact,
-          travel: s.travel, cancelled: !!cancelled, changed: !!override && !cancelled, needsTime: !clock });
+          travel: s.travel, alerts:s.alerts, cancelled: !!cancelled, changed: !!override && !cancelled, needsTime: !clock });
       });
     });
     return results.sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); });
@@ -167,13 +169,17 @@
     });
   }
   function dueAlerts(events, notified, now) {
-    return events.filter(function (e) {
-      if (e.cancelled || !e.time) return false;
+    var result = [], thresholds = [5,10,15,30,60];
+    events.forEach(function (e) {
+      if (e.cancelled || !e.time || e.alerts === false) return;
       var minutes = minutesUntil(e.date,e.time,now);
-      var key = e.uid + '/' + e.date + '/' + e.time + '/15-start';
-      return minutes > 0 && minutes <= 15 && !Object.prototype.hasOwnProperty.call(notified,key);
-    }).map(function (e) { return { event:e, id:e.uid + '/' + e.date + '/' + e.time + '/15-start', mins:Math.ceil(minutesUntil(e.date,e.time,now)) }; })
-      .sort(function (a,b) { return a.mins - b.mins; });
+      if (minutes <= 0 || minutes > 60) return;
+      // A late-opening tab announces only its current interval, not all missed alerts.
+      var stage = thresholds.filter(function (n) { return minutes <= n; })[0];
+      var key = e.uid + '/' + e.date + '/' + e.time + '/' + stage + '-start';
+      if (!Object.prototype.hasOwnProperty.call(notified,key)) result.push({event:e,id:key,stage:stage,mins:Math.ceil(minutes)});
+    });
+    return result.sort(function (a,b) { return a.mins - b.mins; });
   }
   function alertSpeech(candidate) {
     var title = candidate.event.title.replace(/[\uD800-\uDFFF\u2600-\u27BF\uFE0F\u200D]/g,'').replace(/\s+/g,' ').trim();
