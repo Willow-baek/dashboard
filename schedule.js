@@ -122,6 +122,16 @@
     });
     return results.sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); });
   }
+  function agenda(events, now) {
+    var today = seoulKey(now), seen = {};
+    return events.slice().sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); }).filter(function (e) {
+      if (e.cancelled || e.date < today) return false;
+      if (!e.weeks) return true;
+      if (e.time && minutesUntil(e.date,e.time,now) <= 0 || seen[e.id]) return false;
+      seen[e.id] = true;
+      return true;
+    });
+  }
   function weatherComment(data, now, departures) {
     if (!data || !data.current || !data.hourly || !data.hourly.time) return '';
     var nowKey = seoulKey(now);
@@ -157,5 +167,5 @@
   return { text: text, date: date, time: time, dateKey: dateKey, seoulKey: seoulKey, addDays: addDays, weekday: weekday,
     weekStart: weekStart, minutesUntil: minutesUntil, clockLabel: clockLabel, dateLabel: dateLabel,
     dictionary: dictionary, normalize: normalize, legacyRows: legacyRows, legacyExceptions: legacyExceptions,
-    normalizeExceptions: normalizeExceptions, expand: expand, weatherComment: weatherComment };
+    normalizeExceptions: normalizeExceptions, expand: expand, agenda: agenda, weatherComment: weatherComment };
 }));

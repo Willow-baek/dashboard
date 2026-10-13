@@ -160,30 +160,26 @@
     }
     if (e.memo) detailLine('메모',e.memo);
   }
-  function card(e, next) {
-    var status = eventState(e);
-    var button = el('button','event-card ' + (next ? '' : status.className));
-    var top = el('div','event-top');
-    top.appendChild(el('span','event-time', S.clockLabel(e.time)));
-    top.appendChild(el('span','status-tag ' + status.className, next ? S.dateLabel(e.date) : status.label));
-    button.appendChild(top); button.appendChild(el('h3','',e.title));
-    button.appendChild(el('p','event-note',repeatLabel(e) + (e.changed ? ' · 이번 회차 변경' : '')));
-    if (e.travel && e.time && e.date === today() && status.className !== 'past') {
-      var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
-      button.appendChild(el('span','event-departure',S.clockLabel(String(leave.getUTCHours()).padStart(2,'0') + ':' + String(leave.getUTCMinutes()).padStart(2,'0')) + ' 출발'));
-    }
-    button.addEventListener('click',function () { openEvent(e); }); return button;
-  }
-  function row(e) {
-    var button = el('button','event-row');
+  function row(e, isToday) {
+    var status = isToday ? eventState(e) : null;
+    var button = el('button','event-row' + (isToday ? ' today-event ' + status.className : ''));
     var diff = Math.round((new Date(e.date + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 86400000);
     var dday = diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : '지난 일정';
     var date = el('span','row-date',+e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
     date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
-    button.appendChild(el('span','row-dday',dday)); button.appendChild(date);
+    button.appendChild(el('span','row-dday',isToday ? '오늘' : dday)); button.appendChild(date);
     button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),S.clockLabel(e.time)));
     button.appendChild(el('span','row-title',e.title));
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
+    if (isToday && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
+      var reminder = status.className === 'urgent' || status.className === 'past' ? status.label : '';
+      if (e.travel && e.time && status.className !== 'past') {
+        var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
+        var departure = S.clockLabel(String(leave.getUTCHours()).padStart(2,'0') + ':' + String(leave.getUTCMinutes()).padStart(2,'0')) + ' 출발';
+        reminder = reminder ? reminder + ' · ' + departure : departure;
+      }
+      button.appendChild(el('span','row-reminder',reminder));
+    }
     button.addEventListener('click',function () { openEvent(e); }); return button;
   }
   function renderList(id, events, emptyText) {
@@ -192,7 +188,7 @@
     else events.forEach(function (e) { list.appendChild(row(e)); });
   }
   function renderSchedules() {
-    var items = upcoming();
+    var items = S.agenda(state.events,now());
     var todays = items.filter(function (e) { return e.date === today(); });
     todays.sort(function (a,b) {
       var aPast = a.time && S.minutesUntil(a.date,a.time,now()) <= 0;
@@ -201,12 +197,10 @@
     });
     var target = $('today-events'); clear(target);
     $('today-count').textContent = todays.length ? todays.length + '개' : '';
-    if (todays.length) todays.forEach(function (e) { target.appendChild(card(e)); });
+    if (todays.length) todays.forEach(function (e) { target.appendChild(row(e,true)); });
     else {
       var empty = el('div','empty-today'); empty.appendChild(el('h3','', '오늘은 예정된 일정이 없어요'));
-      empty.appendChild(el('p','', '다음 일정만 미리 확인해두면 돼.')); target.appendChild(empty);
-      var next = items[0];
-      if (next) { target.appendChild(el('p','next-caption','가장 가까운 다음 일정')); target.appendChild(card(next,true)); }
+      empty.appendChild(el('p','', '다가오는 일정은 아래에서 확인해줘.')); target.appendChild(empty);
     }
     var end = S.addDays(S.weekStart(today()),6);
     $('week-range').textContent = shortDate(S.weekStart(today())) + ' — ' + shortDate(end);

@@ -69,6 +69,18 @@ body { color: var(--ink); }
 .row-time.needs-time { font-size: 12px; opacity: .85; color: inherit; }
 .row-title { font-size: 25px; line-height: 1.25; }
 .row-meta { display: block; text-align: center; margin: 0; color: inherit; background: rgba(128,128,128,.14); padding: 4px; border-radius: 6px; font-size: 12px; opacity: .7; }
+#today-heading, #today-count { color: var(--urgent-text,#d12424); opacity: 1; }
+.upcoming-section > .section-heading:first-child h2 { color: var(--week-text,#1767ad); opacity: 1; }
+.today-event { background: rgba(210,45,45,.06); }
+.today-event .row-dday { color: var(--urgent-text,#d12424); background: rgba(200,0,0,.14); }
+.today-event .row-time { color: var(--urgent-text,#d12424); opacity: 1; font-weight: 650; }
+.today-event .row-title { font-weight: 650; }
+.today-event.urgent { background: rgba(210,45,45,.12); }
+.today-event.past { opacity: .55; }
+.row-reminder { grid-column: 4 / -1; color: var(--urgent-text,#d12424); font-size: 13px; }
+#week-events .event-row { background: rgba(40,120,220,.055); }
+#week-events .row-dday { color: var(--week-text,#1767ad); background: rgba(40,120,220,.14); }
+#week-events .row-time { color: var(--week-text,#1767ad); opacity: .9; }
 .later-heading { margin-top: 14px; }
 .empty { padding: 9px 8px; color: inherit; opacity: .6; font-size: 13px; }
 .upcoming-section::-webkit-scrollbar-thumb, .today-section::-webkit-scrollbar-thumb { background: rgba(128,128,128,.28); }
@@ -109,3 +121,4 @@ footer .text-button { font-size: 12px; min-height: 34px; }
 @media (max-width: 850px) { .event-card { grid-template-columns: 154px minmax(0,1fr) 62px; gap: 10px; } .event-card h3 { font-size: 25px; } .event-time { font-size: 26px; } .event-row { grid-template-columns: 60px 118px 100px minmax(0,1fr) 56px; gap: 8px; padding: 9px 3px; } .row-dday { width: 60px; font-size: 15px; } .row-date { font-size: 18px; } .row-date small { font-size: 15px; } .row-time { font-size: 17px; } .row-title { font-size: 21px; } .row-meta { font-size: 10px; } #message-text { font-size: 23px; } }
 @media (max-width: 620px) { html,body { height: auto; min-height: 100%; overflow: auto; } #dashboard { height: auto !important; min-height: 100vh; display: flex; padding: 6px 7px 10px; gap: 8px; } .card { border-radius: 16px; } .strip-day { min-height: 53px; } .strip-day .strip-date { font-size: 14px; } .strip-day.today .strip-date { font-size: 17px; } #weekly-toggle { padding: 5px; } .day-header { flex-direction: column; gap: 8px; min-height: 142px; padding: 16px 10px; } #day-title { font-size: 38px; } #clock { font-size: 44px; } .message-band { padding: 5px 10px 12px; } .message-heading { flex-wrap: wrap; gap: 0; } #message-source { font-size: 9px; } #sync-status { font-size: 9px; max-width: none; } .header-tools { gap: 0; } .message-body { padding: 3px 0 0; gap: 7px; } #message-symbol { font-size: 23px; } #message-text { font-size: 19px; } .schedule-layout { padding: 12px 10px; overflow: visible; flex: none; } .today-section { max-height: none; overflow: visible; } .event-card { grid-template-columns: 100px minmax(0,1fr); gap: 8px; padding: 10px 0; } .event-time { font-size: 21px; } .event-card h3 { font-size: 22px; } .event-note { grid-column: 2; text-align: left; font-size: 10px; margin-top: -4px; } .status-tag { font-size: 10px; padding: 4px 6px; } .event-departure { grid-column: 2; font-size: 13px; } .upcoming-section { overflow: visible; padding: 0; } .event-row { grid-template-columns: 52px 94px minmax(0,1fr); gap: 5px 7px; padding: 10px 0; } .row-dday { grid-row: 1 / 3; font-size: 13px; width: 52px; } .row-date { font-size: 15px; } .row-date small { font-size: 12px; margin-left: 1px; } .row-time { grid-column: 2; grid-row: 2; font-size: 13px; } .row-title { grid-column: 3; grid-row: 1 / 3; font-size: 17px; } .row-meta { display: none; } .empty-today h3 { font-size: 20px; } footer { padding: 4px 8px; gap: 4px; font-size: 10px; } footer .text-button { font-size: 10px; padding: 0 4px; } #calendar-panel { padding: 12px 8px; } .calendar-toolbar { gap: 8px; } .calendar-cell { padding: 3px; } .calendar-event { font-size: 10px; } .calendar-controls { gap: 0; } .calendar-heading h2 { font-size: 18px; } #facility-panel { right: 10px; } }
 @media (prefers-reduced-motion: reduce) { #bg-wrap *, .clock-colon { animation: none !important; } }
+@media (max-width: 620px) { .row-reminder { grid-column: 3; } }

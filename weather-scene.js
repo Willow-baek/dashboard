@@ -37,6 +37,7 @@ function applyTheme(key){
   document.documentElement.style.setProperty('--time-color',t.timeColor);
   document.documentElement.style.setProperty('--theme-card',t.card);
   document.documentElement.style.setProperty('--urgent-text',/^#[CD]/.test(t.text)?'#ff8e8e':'#d12424');
+  document.documentElement.style.setProperty('--week-text',/^#[CD]/.test(t.text)?'#8bc8ff':'#1767ad');
   document.getElementById('clock').style.color=t.timeColor;
   document.querySelectorAll('.card').forEach(function(c){c.style.background=t.card;});
   if(key===currentKey)return;

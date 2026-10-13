@@ -51,6 +51,23 @@ test('malformed exceptions are identified rather than silently reusing the origi
   assert.equal(S.normalizeExceptions([{event_id:'a',original_date:'2026-10-21',action:'변경',date:'2026-02-30'}])[0].issue,'변경사항 입력 확인 필요');
   assert.equal(S.normalizeExceptions([{event_id:'a',original_date:'2026-10-21',action:'취소'}])[0].issue,'');
 });
+test('agenda shows one next occurrence per repeating ID, while leaving calendar events intact', () => {
+  const schedules = [make({id:'a',date:'2026-10-13',time:'11:00',repeat:'1주마다'}),make({id:'b',date:'2026-10-14',repeat:'2주마다'}),make({id:'one',date:'2026-10-13',time:'09:00',repeat:''})];
+  const all = S.expand(schedules,[],'2026-10-12','2026-11-30');
+  const list = S.agenda(all,new Date('2026-10-13T00:00:00Z'));
+  assert.equal(list.filter(e=>e.id==='a').length,1);
+  assert.equal(list.filter(e=>e.id==='b').length,1);
+  assert.equal(list.find(e=>e.id==='a').date,'2026-10-13');
+  assert.ok(all.filter(e=>e.id==='a').length>1);
+  const advanced = S.agenda(all,new Date('2026-10-13T02:00:00Z'));
+  assert.equal(advanced.find(e=>e.id==='a').date,'2026-10-20');
+  assert.ok(advanced.find(e=>e.id==='one'));
+});
+test('agenda skips cancelled occurrences and holds an unconfirmed time until its date ends', () => {
+  const all = S.expand([make({id:'a',date:'2026-10-13',time:'',repeat:'1주마다'})],S.normalizeExceptions([{event_id:'a',original_date:'2026-10-20',action:'취소'}]),'2026-10-12','2026-11-30');
+  assert.equal(S.agenda(all,new Date('2026-10-13T14:59:00Z'))[0].date,'2026-10-13');
+  assert.equal(S.agenda(all,new Date('2026-10-13T15:00:00Z'))[0].date,'2026-10-27');
+});
 test('rain earlier today does not trigger an umbrella message for a dry remaining day', () => {
   const times = Array.from({length:24},(_,i) => '2026-10-13T' + String(i).padStart(2,'0') + ':00');
   const data = { current:{apparent_temperature:20,weather_code:0}, hourly:{time:times,precipitation_probability:times.map((_,i)=>i<7?95:0),apparent_temperature:times.map(()=>20),wind_speed_10m:times.map(()=>5)} };
