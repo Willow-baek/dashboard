@@ -151,6 +151,7 @@
   function openEvent(e) {
     openDialog(e.title, e.cancelled ? '취소된 일정' : e.changed ? '변경된 일정' : repeatLabel(e));
     detailLine('날짜', S.dateLabel(e.date)); detailLine('시간', S.clockLabel(e.time));
+    detailLine('알림',e.alerts === false ? '꺼짐' : '1시간 · 30분 · 15분 · 10분 · 5분 전');
     if (e.package) {
       detailLine('수업 회차',e.package.lesson + '/' + e.package.size + ' · 예정 수업 기준');
       detailLine('결제',e.package.paid ? S.dateLabel(e.package.paidOn) + ' 결제한 묶음' : '이 묶음 결제 확인 필요');
@@ -368,7 +369,7 @@
     if (state.soundBlocked) {
       state.soundBlocked = false; renderSoundButton();
       var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
-      speak(due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 일정 시작 15분 전에 알려줄게.');
+      speak(due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 알림을 체크한 일정은 1시간 전부터 알려줄게.');
     }
   }
   $('weekly-toggle').addEventListener('click',function () { if (!state.calendarMode) state.calendarDate = today(); state.calendarMode = (state.calendarMode + 1) % 3; renderCalendar(); });
@@ -399,7 +400,8 @@
       store(CACHE + '-sound',state.sound);
       if (state.sound) {
         activateSound();
-        speak(!$('alert').hidden && state.lastAlertText ? state.lastAlertText : '음성 알림을 켰어. 일정 시작 15분 전에 알려줄게.');
+        var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
+        speak(!$('alert').hidden && due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 알림을 체크한 일정은 1시간 전부터 알려줄게.');
       } else { state.soundBlocked = false; if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; } }
       renderSoundButton();
   });

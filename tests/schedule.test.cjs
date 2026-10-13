@@ -129,14 +129,42 @@ test('new Korean sheet rows work without a manual ID and stay stable after reord
   assert.equal(exception.issue,'');
   assert.equal(S.expand(schedules,[exception],'2026-10-19','2026-10-21')[0].time,'10:30');
 });
-test('alerts start exactly at 15 minutes before the appointment, independent of travel time', () => {
+test('five reminder stages fire once each, independently of travel time', () => {
   const events=S.expand([make({date:'2026-10-13',time:'12:20',travel_minutes:'40'})],[],'2026-10-13','2026-10-13');
-  assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T03:04:59Z')).length,0);
-  const due=S.dueAlerts(events,{},new Date('2026-10-13T03:05:00Z'));
-  assert.equal(due.length,1);
-  assert.equal(due[0].mins,15);
-  assert.equal(S.dueAlerts(events,{[due[0].id]:'2026-10-13'},new Date('2026-10-13T03:10:00Z')).length,0);
+  assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T02:19:59Z')).length,0);
+  const notified={};
+  for(const stage of [60,30,15,10,5]) {
+    const now=new Date(Date.parse('2026-10-13T03:20:00Z')-stage*60000);
+    const due=S.dueAlerts(events,notified,now);
+    assert.equal(due.length,1);
+    assert.equal(due[0].mins,stage);
+    assert.equal(due[0].stage,stage);
+    notified[due[0].id]='2026-10-13';
+    assert.equal(S.dueAlerts(events,notified,new Date(+now+1000)).length,0);
+  }
   assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T03:20:00Z')).length,0);
+});
+test('late opening announces only the current stage, then the next threshold', () => {
+  const events=S.expand([make({date:'2026-10-13',time:'12:20'})],[],'2026-10-13','2026-10-13');
+  const now=new Date('2026-10-13T03:08:00Z');
+  const due=S.dueAlerts(events,{},now);
+  assert.equal(due.length,1); assert.equal(due[0].mins,12); assert.equal(due[0].stage,15);
+  const notified={[due[0].id]:'2026-10-13'};
+  assert.equal(S.dueAlerts(events,notified,new Date('2026-10-13T03:09:00Z')).length,0);
+  assert.equal(S.dueAlerts(events,notified,new Date('2026-10-13T03:10:00Z'))[0].stage,10);
+});
+test('schedule checkboxes disable alerts without hiding events and override name defaults', () => {
+  const now=new Date('2026-10-13T03:00:00Z');
+  for(const title of ['와이랩아카데미 수업','엄마 방문','누나 오는 날','누나 오는날']) {
+    const silent=S.expand([make({title,date:'2026-10-13',time:'12:20'})],[],'2026-10-13','2026-10-13');
+    assert.equal(S.agenda(silent,now).length,1);
+    assert.equal(S.dueAlerts(silent,{},now).length,0);
+    const enabled=S.expand([make({title,date:'2026-10-13',time:'12:20',알림:true})],[],'2026-10-13','2026-10-13');
+    assert.equal(S.dueAlerts(enabled,{},now).length,1);
+  }
+  const unchecked=S.expand([make({date:'2026-10-13',time:'12:20',알림:'FALSE'})],[],'2026-10-13','2026-10-13');
+  assert.equal(S.dueAlerts(unchecked,{},now).length,0);
+  assert.equal(S.legacyRows({event1_title:'상담',event1_alerts:'FALSE'})[0].alerts,'FALSE');
 });
 test('cancelled and unconfirmed appointments are silent; late opening uses the actual remaining minutes', () => {
   const events=S.expand([make({date:'2026-10-13',time:'12:20',title:'💓 코나 심리상담센터'})],[],'2026-10-13','2026-10-13');
