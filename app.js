@@ -325,7 +325,7 @@
     if (!state.sound) return;
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { chime(); return; }
     try {
-      var utterance = new SpeechSynthesisUtterance(text);
+      var utterance = new SpeechSynthesisUtterance('지운아. ' + text);
       utterance.lang = 'ko-KR'; utterance.rate = .95; utterance.pitch = 1; utterance.volume = 1;
       var voices = window.speechSynthesis.getVoices().filter(function (voice) { return /^ko(?:-|$)/i.test(voice.lang.replace('_','-')); });
       var local = voices.filter(function (voice) { return voice.localService; });
