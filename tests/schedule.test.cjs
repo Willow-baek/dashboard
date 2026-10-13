@@ -90,3 +90,14 @@ test('ordinary dry weather still produces clothing advice instead of an unrelate
   data.hourly.time=['2026-10-12T12:00'];
   assert.ok(S.weatherComment(data,now,[]).includes('가벼운 옷차림'));
 });
+test('new Korean sheet rows work without a manual ID and stay stable after reordering', () => {
+  const row={'일정':'새 일정','기준날짜':'2026-10-20','시간':'9:30','반복':'없음','중단':false};
+  assert.equal(S.normalize(row,0).id,S.normalize(row,9).id);
+  assert.equal(S.normalize(row).active,true);
+  assert.equal(S.normalize({...row,'중단':'TRUE'}).active,false);
+  const schedules=[S.normalize(row)];
+  const exception=S.normalizeExceptions([{'일정':'새 일정','원래날짜':'2026-10-20','처리':'시간 확정','변경시간':'10:30'}],schedules)[0];
+  assert.equal(exception.id,schedules[0].id);
+  assert.equal(exception.issue,'');
+  assert.equal(S.expand(schedules,[exception],'2026-10-19','2026-10-21')[0].time,'10:30');
+});

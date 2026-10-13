@@ -40,7 +40,7 @@
   function hydrate(payload) {
     var allSchedules = (payload.rows || []).map(S.normalize).filter(function (s) { return s.title; });
     var schedules = allSchedules.filter(function (s) { return s.active; });
-    var exceptions = S.normalizeExceptions(payload.exceptions || []);
+    var exceptions = S.normalizeExceptions(payload.exceptions || [],allSchedules);
     var keys = {};
     exceptions.forEach(function (e) {
       var key = e.id + '/' + e.original;

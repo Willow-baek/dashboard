@@ -52,14 +52,16 @@
     var anchor = date(field(row, ['date','기준 날짜','기준날짜','날짜']));
     var mode = field(row, ['time_mode','시간 방식','시간방식']);
     var active = field(row, ['active','사용']);
+    var title = field(row, ['title','일정','일정명']);
+    var paused = field(row, ['중단']);
     return {
-      id: field(row, ['id','ID','일정ID']) || 'event' + (index + 1),
-      title: field(row, ['title','일정','일정명']), date: anchor,
+      id: field(row, ['id','ID','일정ID']) || 'auto:' + title,
+      title: title, date: anchor,
       time: time(field(row, ['time','기본 시간','기본시간','시간'])), weeks: weeks,
       variable: /매회|확인|variable/i.test(mode),
       memo: field(row, ['memo','메모']), contact: field(row, ['contact','연락처']),
       travel: Math.min(360, Math.max(0, parseInt(field(row, ['travel_minutes','이동시간','준비·이동시간']), 10) || 0)),
-      end: date(field(row, ['end_date','종료일'])), active: !/^(false|0|중단|아니오|off)$/i.test(active),
+      end: date(field(row, ['end_date','종료일'])), active: !/^(true|1|중단)$/i.test(paused) && !/^(false|0|중단|아니오|off)$/i.test(active),
       issue: weeks < 0 ? '반복 규칙 확인 필요' : !anchor ? '예약 날짜 확인 필요' : ''
     };
   }
@@ -81,7 +83,7 @@
       return row;
     });
   }
-  function normalizeExceptions(rows) {
+  function normalizeExceptions(rows, schedules) {
     return rows.filter(function (row) { return Object.keys(row).some(function (key) { return !!text(row[key]); }); }).map(function (row) {
       var original = field(row, ['original_date','원래 날짜','원래날짜']);
       var moved = field(row, ['date','변경 날짜','변경날짜']);
@@ -89,6 +91,11 @@
       var result = { id: field(row, ['event_id','일정ID']), original: date(original),
         action: field(row, ['action','처리']), date: date(moved),
         time: time(clock), memo: field(row, ['memo','메모']) };
+      var title = field(row, ['일정','일정명']);
+      if (!result.id && title && schedules) {
+        var matches = schedules.filter(function (s) { return s.title === title; });
+        if (matches.length === 1) result.id = matches[0].id;
+      }
       result.issue = !result.id || !result.original || moved && !result.date || clock && !result.time || !/^(취소|cancel|변경|change|시간 확정|confirm)$/i.test(result.action) || /^(시간 확정|confirm)$/i.test(result.action) && !result.time ? '변경사항 입력 확인 필요' : '';
       return result;
     });
