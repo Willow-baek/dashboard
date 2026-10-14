@@ -118,6 +118,12 @@ footer .text-button { font-size: 12px; min-height: 34px; }
 #weather-summary { opacity: .75; }
 #facility-panel { bottom: 65px; right: 16px; padding: 8px 16px; }
 #facility-panel span { color: inherit; opacity: .75; }
+.facility-option { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; gap: 10px; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; font-size: 14px; }
+.facility-option:last-child { border-bottom: 0; }
+.facility-option:hover { background: rgba(128,128,128,.08); }
+.facility-option strong, .facility-option svg { flex-shrink: 0; }
+.facility-option span { flex: 1; text-align: right; font-size: 12px; overflow-wrap: anywhere; }
+.facility-option svg { width: 16px; height: 16px; }
 #calendar-panel { margin: 0; padding: 16px; border: 1px solid rgba(255,255,255,.12); }
 .calendar-heading h2 { font-size: 21px; }
 #calendar-mode-label { color: inherit; opacity: .55; }
