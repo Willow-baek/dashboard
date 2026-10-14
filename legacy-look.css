@@ -69,6 +69,11 @@ body { color: var(--ink); }
 .row-time { grid-column: auto; margin: 0; color: inherit; opacity: .65; font-size: 21px; white-space: nowrap; }
 .row-time.needs-time { font-size: 12px; opacity: .85; color: inherit; }
 .row-title { font-size: 25px; line-height: 1.25; }
+.row-date.period-date { font-size: 18px; }
+.event-row.today-event.ongoing, .event-row.today-event.ongoing .row-dday { animation: none; }
+.event-row.today-event.ongoing .row-dday::before, .event-row.today-event.ongoing .row-dday::after { animation: none; opacity: 0; }
+.calendar-event.period-event { border-left-color: #238876; }
+@media (max-width: 620px) { .row-date.period-date { font-size: 13px; } }
 .row-meta { display: block; text-align: center; margin: 0; color: inherit; background: rgba(128,128,128,.14); padding: 4px; border-radius: 6px; font-size: 12px; opacity: .7; }
 #today-heading, #today-count { color: var(--urgent-text,#d12424); opacity: 1; }
 .upcoming-section > .section-heading:first-child h2 { color: var(--week-text,#1767ad); opacity: 1; }

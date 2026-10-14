@@ -139,6 +139,7 @@
   }
   function eventState(e) {
     if (e.cancelled) return { label: '취소', className: '' };
+    if (S.isOngoing(e,now())) return { label:'진행 중', className:'ongoing' };
     if (e.needsTime) return { label: '시간 확인 필요', className: 'needs-time' };
     var diff = S.minutesUntil(e.date,e.time,now());
     if (diff <= 0) return { label: '예정 시간 지남', className: 'past' };
@@ -147,11 +148,14 @@
     if (leave <= 60) return { label: e.travel ? '출발까지 ' + Math.ceil(leave) + '분' : '시작까지 ' + Math.ceil(diff) + '분', className: 'urgent' };
     return { label: e.changed ? '변경된 일정' : e.date === today() ? '오늘' : S.dateLabel(e.date), className: '' };
   }
-  function repeatLabel(e) { return e.weeks ? (e.weeks === 1 ? '매주' : e.weeks + '주마다') : '한 번만'; }
+  function repeatLabel(e) { return e.endDate ? '기간 일정' : e.weeks ? (e.weeks === 1 ? '매주' : e.weeks + '주마다') : '한 번만'; }
+  function eventTimeLabel(e) { return e.endDate && !e.time ? '시간 지정 없음' : S.clockLabel(e.time); }
   function openEvent(e) {
     openDialog(e.title, e.cancelled ? '취소된 일정' : e.changed ? '변경된 일정' : repeatLabel(e));
-    detailLine('날짜', S.dateLabel(e.date)); detailLine('시간', S.clockLabel(e.time));
-    detailLine('알림',e.alerts === false ? '꺼짐' : '1시간 · 30분 · 15분 · 10분 · 5분 전');
+    detailLine(e.endDate ? '시작일' : '날짜', S.dateLabel(e.date));
+    if (e.endDate) detailLine('끝나는 날',S.dateLabel(e.endDate) + '까지');
+    detailLine(e.endDate ? '시작 시간' : '시간',eventTimeLabel(e));
+    detailLine('알림',e.alerts === false ? '꺼짐' : e.endDate && !e.time ? '시작 시간이 없어 알림 없음' : (e.endDate ? '시작 시각에만 · ' : '') + '1시간 · 30분 · 15분 · 10분 · 5분 전');
     if (e.package) {
       detailLine('수업 회차',e.package.lesson + '/' + e.package.size + ' · 예정 수업 기준');
       detailLine('결제',e.package.paid ? S.dateLabel(e.package.paidOn) + ' 결제한 묶음' : '이 묶음 결제 확인 필요');
@@ -175,16 +179,17 @@
     var button = el('button','event-row' + (isToday ? ' today-event ' + status.className : ''));
     var diff = Math.round((new Date(e.date + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 86400000);
     var dday = diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : '지난 일정';
-    var date = el('span','row-date',+e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
-    date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
-    button.appendChild(el('span','row-dday',isToday ? '오늘' : dday)); button.appendChild(date);
-    button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),S.clockLabel(e.time)));
+    var ongoing = S.isOngoing(e,now());
+    var date = el('span','row-date' + (e.endDate ? ' period-date' : ''),e.endDate ? shortDate(e.date) + '~' + shortDate(e.endDate) : +e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
+    if (!e.endDate) date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
+    button.appendChild(el('span','row-dday',ongoing ? '진행 중' : isToday ? '오늘' : dday)); button.appendChild(date);
+    button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),ongoing ? shortDate(e.endDate) + '까지' : e.endDate && !e.time ? '기간 일정' : eventTimeLabel(e)));
     button.appendChild(el('span','row-title',e.title));
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
     if (e.package && (!e.package.paid || e.package.lesson === e.package.size)) {
       button.appendChild(el('span','package-reminder',!e.package.paid ? '이번 묶음 결제 확인 필요' : e.package.nextDate ? S.dateLabel(e.package.nextDate) + ' 수업 전 다음 묶음 결제' : '이번 묶음 마지막 수업'));
     }
-    if (isToday && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
+    if (isToday && !ongoing && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
       var reminder = status.className === 'urgent' || status.className === 'past' ? status.label : '';
       if (e.travel && e.time && status.className !== 'past') {
         var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
@@ -202,10 +207,10 @@
   }
   function renderSchedules() {
     var items = S.agenda(state.events,now());
-    var todays = items.filter(function (e) { return e.date === today(); });
+    var todays = items.filter(function (e) { return S.coversDay(e,today()); });
     todays.sort(function (a,b) {
-      var aPast = a.time && S.minutesUntil(a.date,a.time,now()) <= 0;
-      var bPast = b.time && S.minutesUntil(b.date,b.time,now()) <= 0;
+      var aPast = !S.isOngoing(a,now()) && a.time && S.minutesUntil(a.date,a.time,now()) <= 0;
+      var bPast = !S.isOngoing(b,now()) && b.time && S.minutesUntil(b.date,b.time,now()) <= 0;
       return Number(aPast) - Number(bPast) || (a.time || '99:99').localeCompare(b.time || '99:99');
     });
     var target = $('today-events'); clear(target);
@@ -232,7 +237,7 @@
       var day = el('span','strip-day' + (key === today() ? ' today' : '') + (i === 6 ? ' sunday' : ''));
       day.appendChild(el('span','weekday',['월','화','수','목','금','토','일'][i]));
       day.appendChild(el('span','strip-date',shortDate(key)));
-      day.appendChild(el('span','strip-dot' + (state.events.some(function (e) { return e.date === key && !e.cancelled; }) ? '' : ' blank')));
+      day.appendChild(el('span','strip-dot' + (state.events.some(function (e) { return S.coversDay(e,key) && !e.cancelled; }) ? '' : ' blank')));
       $('weekly-row').appendChild(day);
     }
   }
@@ -267,16 +272,16 @@
     ['월','화','수','목','금','토','일'].forEach(function (d) { grid.appendChild(el('div','calendar-weekday',d)); });
     for (var i = 0; i < range.count; i++) {
       (function (key) {
-        var items = events.filter(function (e) { return e.date === key; });
+        var items = events.filter(function (e) { return S.coversDay(e,key); });
         var cell = el('div','calendar-cell' + (key === today() ? ' today' : '') + (key.slice(0,7) !== state.calendarDate.slice(0,7) && state.calendarMode === 2 ? ' outside' : '') + (S.weekday(key) === 0 ? ' sunday' : ''));
         var dateButton = el('button','day-number',state.calendarMode === 1 ? shortDate(key) : +key.slice(8,10));
         dateButton.setAttribute('aria-label',S.dateLabel(key) + ' 일정 ' + items.length + '개');
         dateButton.addEventListener('click',function () { openDay(key,items); }); cell.appendChild(dateButton);
         var visible = state.calendarMode === 1 ? items : items.slice(0,2);
         visible.forEach(function (e) {
-          var button = el('button','calendar-event' + (e.cancelled ? ' cancelled' : e.needsTime ? ' unconfirmed' : ''));
-          if (state.calendarMode === 1) button.appendChild(el('span','cal-time',e.cancelled ? '취소' : S.clockLabel(e.time)));
-          button.appendChild(el('span','',e.title)); button.title = S.clockLabel(e.time) + ' ' + e.title;
+          var button = el('button','calendar-event' + (e.endDate ? ' period-event' : '') + (e.cancelled ? ' cancelled' : e.needsTime ? ' unconfirmed' : ''));
+          if (state.calendarMode === 1) button.appendChild(el('span','cal-time',e.cancelled ? '취소' : e.endDate && key !== e.date ? '기간 일정' : eventTimeLabel(e)));
+          button.appendChild(el('span','',e.title)); button.title = (e.endDate ? shortDate(e.date) + '~' + shortDate(e.endDate) : eventTimeLabel(e)) + ' ' + e.title;
           button.addEventListener('click',function () { openEvent(e); }); cell.appendChild(button);
         });
         if (items.length > visible.length) { var more = el('button','calendar-more','+' + (items.length - visible.length)); more.addEventListener('click',function () { openDay(key,items); }); cell.appendChild(more); }
