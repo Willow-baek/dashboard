@@ -55,6 +55,8 @@
     var title = field(row, ['title','일정','일정명']);
     var paused = field(row, ['중단']);
     var alerts = field(row, ['alerts','알림','알람']);
+    var periodValue = field(row, ['period_end','기간종료일','끝나는날짜']);
+    var periodEnd = date(periodValue);
     return {
       id: field(row, ['id','ID','일정ID']) || 'auto:' + title,
       title: title, date: anchor,
@@ -66,8 +68,9 @@
       paidOn: date(field(row, ['paid_on','결제일'])),
       memo: field(row, ['memo','메모']), contact: field(row, ['contact','연락처']),
       travel: Math.min(360, Math.max(0, parseInt(field(row, ['travel_minutes','이동시간','준비·이동시간']), 10) || 0)),
-      end: date(field(row, ['end_date','종료일'])), active: !/^(true|1|중단)$/i.test(paused) && !/^(false|0|중단|아니오|off)$/i.test(active),
-      issue: weeks < 0 ? '반복 규칙 확인 필요' : !anchor ? '예약 날짜 확인 필요' : ''
+      end: date(field(row, ['end_date','반복종료일','종료일'])), periodEnd:periodEnd,
+      active: !/^(true|1|중단)$/i.test(paused) && !/^(false|0|중단|아니오|off)$/i.test(active),
+      issue: weeks < 0 ? '반복 규칙 확인 필요' : !anchor ? '예약 날짜 확인 필요' : periodValue && (!periodEnd || periodEnd < anchor) ? '기간 종료일 확인 필요' : periodEnd && weeks ? '기간 일정은 반복을 비워주세요' : ''
     };
   }
   function legacyRows(data) {
@@ -75,7 +78,7 @@
     Object.keys(data).forEach(function (key) { var m = key.match(/^event(\d+)_/); if (m) indices[m[1]] = true; });
     return Object.keys(indices).sort(function (a,b) { return +a - +b; }).map(function (index) {
       var row = { id: 'event' + index };
-      ['date','time','title','repeat','memo','contact','time_mode','travel_minutes','end_date','active','alerts'].forEach(function (key) { row[key] = data['event' + index + '_' + key] || ''; });
+      ['date','time','title','repeat','memo','contact','time_mode','travel_minutes','end_date','period_end','active','alerts'].forEach(function (key) { row[key] = data['event' + index + '_' + key] || ''; });
       return row;
     });
   }
@@ -109,7 +112,7 @@
     var lookup = {};
     exceptions.forEach(function (e) { if (e.id && e.original) lookup[e.id + '/' + e.original] = e; });
     var results = [];
-    schedules.filter(function (s) { return s.active && s.title && s.date && s.weeks >= 0; }).forEach(function (s) {
+    schedules.filter(function (s) { return s.active && s.title && s.date && s.weeks >= 0 && !s.issue; }).forEach(function (s) {
       var dates = [];
       if (s.weeks) {
         // RRule uses floating UTC dates; the actual appointment time is applied in Seoul below.
@@ -126,10 +129,11 @@
         var actual = override && override.date || original;
         var clock = s.variable && original !== s.date ? '' : s.time;
         if (override && override.time) clock = override.time;
-        if (actual < start || actual > end) return;
-        results.push({ uid: s.id + '/' + original, id: s.id, original: original, date: actual, time: clock,
+        var endDate = s.periodEnd ? addDays(actual,Math.round((new Date(s.periodEnd + 'T00:00:00Z') - new Date(s.date + 'T00:00:00Z')) / DAY)) : '';
+        if ((endDate || actual) < start || actual > end) return;
+        results.push({ uid: s.id + '/' + original, id: s.id, original: original, date: actual, endDate:endDate, time: clock,
           title: s.title, weeks: s.weeks, memo: override && override.memo || s.memo, contact: s.contact,
-          travel: s.travel, alerts:s.alerts, cancelled: !!cancelled, changed: !!override && !cancelled, needsTime: !clock });
+          travel: s.travel, alerts:s.alerts, cancelled: !!cancelled, changed: !!override && !cancelled, needsTime: !clock && !endDate });
       });
     });
     return results.sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); });
@@ -158,10 +162,14 @@
     });
     return results;
   }
+  function coversDay(event, day) { return event.date <= day && (event.endDate || event.date) >= day; }
+  function isOngoing(event, now) {
+    return !!event.endDate && !event.cancelled && coversDay(event,seoulKey(now)) && (!event.time || minutesUntil(event.date,event.time,now) <= 0);
+  }
   function agenda(events, now) {
     var today = seoulKey(now), seen = {};
     return events.slice().sort(function (a,b) { return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99')); }).filter(function (e) {
-      if (e.cancelled || e.date < today) return false;
+      if (e.cancelled || (e.endDate || e.date) < today) return false;
       if (!e.weeks) return true;
       if (e.time && minutesUntil(e.date,e.time,now) <= 0 || seen[e.id]) return false;
       seen[e.id] = true;
@@ -224,5 +232,5 @@
   return { text: text, date: date, time: time, dateKey: dateKey, seoulKey: seoulKey, addDays: addDays, weekday: weekday,
     weekStart: weekStart, minutesUntil: minutesUntil, clockLabel: clockLabel, dateLabel: dateLabel,
     dictionary: dictionary, normalize: normalize, legacyRows: legacyRows, legacyExceptions: legacyExceptions,
-    normalizeExceptions: normalizeExceptions, expand: expand, agenda: agenda, dueAlerts: dueAlerts, alertSpeech: alertSpeech, weatherComment: weatherComment };
+    normalizeExceptions: normalizeExceptions, expand: expand, coversDay:coversDay, isOngoing:isOngoing, agenda: agenda, dueAlerts: dueAlerts, alertSpeech: alertSpeech, weatherComment: weatherComment };
 }));
