@@ -210,11 +210,8 @@
     });
     var target = $('today-events'); clear(target);
     $('today-count').textContent = todays.length ? todays.length + '개' : '';
-    if (todays.length) todays.forEach(function (e) { target.appendChild(row(e,true)); });
-    else {
-      var empty = el('div','empty-today'); empty.appendChild(el('h3','', '오늘은 예정된 일정이 없어요'));
-      empty.appendChild(el('p','', '다가오는 일정은 아래에서 확인해줘.')); target.appendChild(empty);
-    }
+    document.querySelector('.today-section').hidden = !todays.length;
+    todays.forEach(function (e) { target.appendChild(row(e,true)); });
     var end = S.addDays(S.weekStart(today()),6);
     $('week-range').textContent = shortDate(S.weekStart(today())) + ' — ' + shortDate(end);
     renderList('week-events',items.filter(function (e) { return e.date > today() && e.date <= end; }), '이번 주 남은 일정은 없어요.');
