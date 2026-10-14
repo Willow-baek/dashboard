@@ -7,7 +7,7 @@
   var CACHE = 'home-dashboard-v2';
   var state = { settings: {}, schedules: [], exceptions: [], events: [], loaded: false, savedAt: 0,
     calendarMode: 0, calendarDate: S.seoulKey(new Date()), weather: null, weatherAt: 0, weatherOK: false, weatherStatus: 'loading',
-    busy: false, sound: true, soundBlocked: false, audio: null, speech: [], lastAlertText: '', focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
+    busy: false, sound: true, soundBlocked: false, audio: null, speech: [], lastAlertText: '', facilityDetail:'', focus: null, warned: false, sheetOK: false, failureReason: '연결 확인' };
   var notified = {};
   function $(id) { return document.getElementById(id); }
   function icons() { if (window.lucide) window.lucide.createIcons(); }
@@ -291,11 +291,22 @@
     renderCalendar();
   }
   function renderFacilities() {
-    var day = S.weekday(today());
-    $('library-hours').textContent = state.settings.library_hours || (day === 0 || day === 1 ? '오늘 휴관 · 운영시간 재확인' : day === 6 ? '10:00–18:00 · 기존 안내 기준' : '10:00–19:00 · 기존 안내 기준');
-    var rows = $('facility-panel').children;
-    rows[0].querySelector('span').textContent = state.settings.gym_status || '운영 중단';
-    rows[1].querySelector('span').textContent = state.settings.roof_status || '폐쇄';
+    ['gym','roof','library'].forEach(function (id) {
+      var info = window.Facilities.info(id,state.settings,now());
+      $(id === 'library' ? 'library-hours' : id + '-summary').textContent = info.membership || info.status.replace(' · 기존 시간표 기준','');
+    });
+    if (state.facilityDetail && !$('detail-overlay').hidden) renderFacilityDetail(state.facilityDetail);
+  }
+  function renderFacilityDetail(id) {
+    var info = window.Facilities.info(id,state.settings,now()); clear($('detail-content'));
+    detailLine('현재 상태',info.status);
+    if (info.membership) detailLine('지운이 회원권',info.membership);
+    info.hours.forEach(function (line) { detailLine(line[0] + ' 운영시간',line[1]); });
+    detailLine('안내 기준',info.basis);
+  }
+  function openFacility(id) {
+    openDialog(window.Facilities.info(id,state.settings,now()).name,'운영시간 · 현재 상태');
+    state.facilityDetail = id; renderFacilityDetail(id);
   }
   function renderAll() {
     state.events = S.expand(state.schedules,state.exceptions,S.weekStart(today()),S.addDays(today(),42));
@@ -303,12 +314,13 @@
     if (window.LegacyTheme) window.LegacyTheme.update(state.weatherOK && state.weather ? state.weather.current.weather_code : 0,new Date(Date.now() + 9 * 3600000).getUTCHours());
   }
   function openDialog(title,label) {
+    state.facilityDetail = '';
     if ($('detail-overlay').hidden) state.focus = document.activeElement;
     $('detail-title').textContent = title; $('detail-label').textContent = label; clear($('detail-content'));
     $('detail-overlay').hidden = false; $('detail-close').focus();
   }
   function detailLine(label,content) { var line = el('div','detail-line'); line.appendChild(el('small','',label)); line.appendChild(document.createTextNode(content)); $('detail-content').appendChild(line); return line; }
-  function closeDialog() { $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
+  function closeDialog() { state.facilityDetail = ''; $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
   function chime() {
     if (!state.sound || !state.audio) return;
     try {
@@ -379,6 +391,7 @@
   $('calendar-next').addEventListener('click',function () { moveCalendar(1); });
   $('calendar-today').addEventListener('click',function () { state.calendarDate = today(); renderCalendar(); });
   $('facility-toggle').addEventListener('click',function () { $('facility-panel').hidden = !$('facility-panel').hidden; $('facility-toggle').setAttribute('aria-expanded',String(!$('facility-panel').hidden)); });
+  ['gym','roof','library'].forEach(function (id) { $('facility-' + id).addEventListener('click',function () { openFacility(id); }); });
   $('detail-close').addEventListener('click',closeDialog);
   $('detail-overlay').addEventListener('click',function (e) { if (e.target === $('detail-overlay')) closeDialog(); });
   document.addEventListener('keydown',function (e) {
