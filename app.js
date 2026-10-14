@@ -130,7 +130,12 @@
   function fitHeader() {
     var header = document.querySelector('.day-header');
     if (!header.getClientRects().length) return;
-    if (window.innerWidth <= 620) { $('day-title').style.fontSize = ''; $('clock').style.fontSize = ''; return; }
+    if (window.innerWidth <= 620) {
+      $('day-title').style.fontSize = ''; $('clock').style.fontSize = '';
+      var mobileAvailable = header.clientWidth - 24;
+      if ($('day-title').scrollWidth > mobileAvailable) $('day-title').style.fontSize = Math.floor(38 * mobileAvailable / $('day-title').scrollWidth) + 'px';
+      return;
+    }
     $('day-title').style.fontSize = '82px'; $('clock').style.fontSize = '82px';
     var available = header.clientWidth - 50;
     var required = $('day-title').scrollWidth + $('clock').scrollWidth + 22;
@@ -155,7 +160,7 @@
     detailLine(e.endDate ? '시작일' : '날짜', S.dateLabel(e.date));
     if (e.endDate) detailLine('끝나는 날',S.dateLabel(e.endDate) + '까지');
     detailLine(e.endDate ? '시작 시간' : '시간',eventTimeLabel(e));
-    detailLine('알림',e.alerts === false ? '꺼짐' : e.endDate && !e.time ? '시작 시간이 없어 알림 없음' : (e.endDate ? '시작 시각에만 · ' : '') + '1시간 · 30분 · 15분 · 10분 · 5분 전');
+    detailLine('알림',e.alerts === false ? '꺼짐' : !e.time ? '시간이 없어 알림 없음' : (e.endDate ? '시작 전만 · ' : '') + (e.travel ? '준비·출발 기준 · ' : '시작 기준 · ') + '1시간 · 30분 · 15분 · 10분 · 5분 전' + (e.travel ? ' · 출발할 때' : ''));
     if (e.package) {
       detailLine('수업 회차',e.package.lesson + '/' + e.package.size + ' · 예정 수업 기준');
       detailLine('결제',e.package.paid ? S.dateLabel(e.package.paidOn) + ' 결제한 묶음' : '이 묶음 결제 확인 필요');
@@ -163,9 +168,8 @@
     }
     if (e.changed && e.date !== e.original) detailLine('원래 날짜', S.dateLabel(e.original));
     if (e.travel && e.time && !e.cancelled) {
-      var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
-      var leaveTime = String(leave.getUTCHours()).padStart(2,'0') + ':' + String(leave.getUTCMinutes()).padStart(2,'0');
-      detailLine('출발', S.dateLabel(S.dateKey(leave)) + ' ' + S.clockLabel(leaveTime) + ' · 준비·이동 ' + e.travel + '분');
+      var leave = S.departure(e);
+      detailLine('준비·출발', S.dateLabel(leave.date) + ' ' + S.clockLabel(leave.time) + ' · 준비·이동 ' + e.travel + '분');
     }
     if (e.contact) {
       var phone = e.contact.replace(/[^\d+]/g,'');
@@ -180,10 +184,10 @@
     var diff = Math.round((new Date(e.date + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 86400000);
     var dday = diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : '지난 일정';
     var ongoing = S.isOngoing(e,now());
-    var date = el('span','row-date' + (e.endDate ? ' period-date' : ''),e.endDate ? shortDate(e.date) + '~' + shortDate(e.endDate) : +e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
+    var date = el('span','row-date' + (e.endDate ? ' period-date' : ''),e.endDate ? S.periodLabel(e.date,e.endDate) : +e.date.slice(5,7) + '월 ' + +e.date.slice(8,10) + '일');
     if (!e.endDate) date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
     button.appendChild(el('span','row-dday',ongoing ? '진행 중' : isToday ? '오늘' : dday)); button.appendChild(date);
-    button.appendChild(el('span','row-time' + (e.needsTime ? ' needs-time' : ''),ongoing ? shortDate(e.endDate) + '까지' : e.endDate && !e.time ? '기간 일정' : eventTimeLabel(e)));
+    button.appendChild(el('span','row-time' + (e.endDate ? ' period-time' : '') + (e.needsTime ? ' needs-time' : ''),ongoing ? S.periodLabel(e.endDate,e.endDate) + '까지' : e.endDate && !e.time ? '기간 일정' : eventTimeLabel(e)));
     button.appendChild(el('span','row-title',e.title));
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
     if (e.package && (!e.package.paid || e.package.lesson === e.package.size)) {
@@ -192,9 +196,9 @@
     if (isToday && !ongoing && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
       var reminder = status.className === 'urgent' || status.className === 'past' ? status.label : '';
       if (e.travel && e.time && status.className !== 'past') {
-        var leave = new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000 + 9 * 3600000);
-        var departure = S.clockLabel(String(leave.getUTCHours()).padStart(2,'0') + ':' + String(leave.getUTCMinutes()).padStart(2,'0')) + ' 출발';
-        reminder = reminder ? reminder + ' · ' + departure : departure;
+        var leave = S.departure(e);
+        var departureLabel = S.clockLabel(leave.time) + ' 준비·출발';
+        reminder = reminder ? reminder + ' · ' + departureLabel : departureLabel;
       }
       button.appendChild(el('span','row-reminder',reminder));
     }
@@ -281,7 +285,7 @@
         visible.forEach(function (e) {
           var button = el('button','calendar-event' + (e.endDate ? ' period-event' : '') + (e.cancelled ? ' cancelled' : e.needsTime ? ' unconfirmed' : ''));
           if (state.calendarMode === 1) button.appendChild(el('span','cal-time',e.cancelled ? '취소' : e.endDate && key !== e.date ? '기간 일정' : eventTimeLabel(e)));
-          button.appendChild(el('span','',e.title)); button.title = (e.endDate ? shortDate(e.date) + '~' + shortDate(e.endDate) : eventTimeLabel(e)) + ' ' + e.title;
+          button.appendChild(el('span','',e.title)); button.title = (e.endDate ? S.periodLabel(e.date,e.endDate) : eventTimeLabel(e)) + ' ' + e.title;
           button.addEventListener('click',function () { openEvent(e); }); cell.appendChild(button);
         });
         if (items.length > visible.length) { var more = el('button','calendar-more','+' + (items.length - visible.length)); more.addEventListener('click',function () { openDay(key,items); }); cell.appendChild(more); }
@@ -365,7 +369,11 @@
     if (!candidates.length) return;
     candidates.forEach(function (c) { notified[c.id] = today(); }); store(CACHE + '-alerts',notified);
     $('alert-title').textContent = candidates.map(function (c) { return c.event.title; }).join(' · ');
-    $('alert-text').textContent = candidates.map(function (c) { return '시작까지 ' + c.mins + '분 · ' + S.clockLabel(c.event.time); }).join(' / ');
+    $('alert-text').textContent = candidates.map(function (c) {
+      if (c.kind !== 'departure') return '시작까지 ' + c.mins + '분 · ' + S.clockLabel(c.event.time);
+      var leave = S.departure(c.event);
+      return (c.stage === 0 ? '준비해서 나갈 시간' : '준비·출발까지 ' + c.mins + '분') + ' · ' + (leave.date !== today() ? S.dateLabel(leave.date) + ' ' : '') + S.clockLabel(leave.time) + ' · 일정 시작 ' + S.clockLabel(c.event.time);
+    }).join(' / ');
     state.lastAlertText = candidates.map(S.alertSpeech).join(' ');
     $('alert').hidden = false; speak(state.lastAlertText);
   }
@@ -385,7 +393,7 @@
     if (state.soundBlocked) {
       state.soundBlocked = false; renderSoundButton();
       var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
-      speak(due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 알림을 체크한 일정은 1시간 전부터 알려줄게.');
+      speak(due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 일정과 준비·이동시간에 맞춰 알려줄게.');
     }
   }
   $('weekly-toggle').addEventListener('click',function () { if (!state.calendarMode) state.calendarDate = today(); state.calendarMode = (state.calendarMode + 1) % 3; renderCalendar(); });
@@ -418,7 +426,7 @@
       if (state.sound) {
         activateSound();
         var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
-        speak(!$('alert').hidden && due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 알림을 체크한 일정은 1시간 전부터 알려줄게.');
+        speak(!$('alert').hidden && due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 일정과 준비·이동시간에 맞춰 알려줄게.');
       } else { state.soundBlocked = false; if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; } }
       renderSoundButton();
   });

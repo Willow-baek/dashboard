@@ -129,8 +129,8 @@ test('new Korean sheet rows work without a manual ID and stay stable after reord
   assert.equal(exception.issue,'');
   assert.equal(S.expand(schedules,[exception],'2026-10-19','2026-10-21')[0].time,'10:30');
 });
-test('five reminder stages fire once each, independently of travel time', () => {
-  const events=S.expand([make({date:'2026-10-13',time:'12:20',travel_minutes:'40'})],[],'2026-10-13','2026-10-13');
+test('five start-time reminder stages fire once each when travel time is blank', () => {
+  const events=S.expand([make({date:'2026-10-13',time:'12:20'})],[],'2026-10-13','2026-10-13');
   assert.equal(S.dueAlerts(events,{},new Date('2026-10-13T02:19:59Z')).length,0);
   const notified={};
   for(const stage of [60,30,15,10,5]) {

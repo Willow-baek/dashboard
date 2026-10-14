@@ -30,6 +30,18 @@
     return (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) + ':' + valid.slice(3);
   }
   function dateLabel(key) { return +key.slice(5, 7) + '월 ' + +key.slice(8, 10) + '일 (' + ['일','월','화','수','목','금','토'][weekday(key)] + ')'; }
+  function periodLabel(start, end) {
+    function label(key, includeMonth, includeYear) {
+      return (includeYear ? key.slice(0,4) + '/' : '') + (includeMonth ? +key.slice(5,7) + '/' : '') + +key.slice(8,10) + '(' + ['일','월','화','수','목','금','토'][weekday(key)] + ')';
+    }
+    var differentYear = start.slice(0,4) !== end.slice(0,4);
+    return label(start,true,differentYear) + (start === end ? '' : '-' + label(end,start.slice(0,7) !== end.slice(0,7),differentYear));
+  }
+  function departure(event) {
+    if (!event.time) return null;
+    var local = new Date(new Date(event.date + 'T' + event.time + ':00+09:00').getTime() - (event.travel || 0) * 60000 + 9 * 3600000);
+    return { date:dateKey(local), time:pad(local.getUTCHours()) + ':' + pad(local.getUTCMinutes()) };
+  }
   function field(row, names) {
     for (var i = 0; i < names.length; i++) if (row[names[i]] != null) return text(row[names[i]]);
     return '';
@@ -180,12 +192,14 @@
     var result = [], thresholds = [5,10,15,30,60];
     events.forEach(function (e) {
       if (e.cancelled || !e.time || e.alerts === false) return;
-      var minutes = minutesUntil(e.date,e.time,now);
-      if (minutes <= 0 || minutes > 60) return;
+      var startMinutes = minutesUntil(e.date,e.time,now), travel = e.travel || 0;
+      var minutes = startMinutes - travel;
+      if (startMinutes <= 0 || minutes > 60 || (travel ? minutes < -5 : minutes <= 0)) return;
       // A late-opening tab announces only its current interval, not all missed alerts.
-      var stage = thresholds.filter(function (n) { return minutes <= n; })[0];
-      var key = e.uid + '/' + e.date + '/' + e.time + '/' + stage + '-start';
-      if (!Object.prototype.hasOwnProperty.call(notified,key)) result.push({event:e,id:key,stage:stage,mins:Math.ceil(minutes)});
+      var stage = minutes <= 0 ? 0 : thresholds.filter(function (n) { return minutes <= n; })[0];
+      var kind = travel ? 'departure' : 'start';
+      var key = e.uid + '/' + e.date + '/' + e.time + '/' + stage + '-' + kind + (travel ? '-' + travel : '');
+      if (!Object.prototype.hasOwnProperty.call(notified,key)) result.push({event:e,id:key,stage:stage,kind:kind,mins:Math.max(0,Math.ceil(minutes))});
     });
     return result.sort(function (a,b) { return a.mins - b.mins; });
   }
@@ -193,6 +207,7 @@
     var title = candidate.event.title.replace(/[\uD800-\uDFFF\u2600-\u27BF\uFE0F\u200D]/g,'').replace(/\s+/g,' ').trim();
     var clock = time(candidate.event.time), hour = +clock.slice(0,2), minute = +clock.slice(3);
     var spokenTime = (hour < 12 ? '오전 ' : '오후 ') + (hour % 12 || 12) + '시' + (minute ? ' ' + minute + '분' : '');
+    if (candidate.kind === 'departure') return (candidate.stage === 0 ? '이제 준비해서 나갈 시간이야. ' : '출발까지 ' + candidate.mins + '분 남았어. ') + title + ' 일정은 ' + spokenTime + '에 시작해.';
     return candidate.mins + '분 뒤, ' + spokenTime + '에 ' + title + ' 일정이 있어. 준비해줘.';
   }
   function weatherComment(data, now, departures) {
@@ -230,7 +245,7 @@
     return lines.slice(0,2).join(' ');
   }
   return { text: text, date: date, time: time, dateKey: dateKey, seoulKey: seoulKey, addDays: addDays, weekday: weekday,
-    weekStart: weekStart, minutesUntil: minutesUntil, clockLabel: clockLabel, dateLabel: dateLabel,
+    weekStart: weekStart, minutesUntil: minutesUntil, clockLabel: clockLabel, dateLabel: dateLabel, periodLabel:periodLabel, departure:departure,
     dictionary: dictionary, normalize: normalize, legacyRows: legacyRows, legacyExceptions: legacyExceptions,
     normalizeExceptions: normalizeExceptions, expand: expand, coversDay:coversDay, isOngoing:isOngoing, agenda: agenda, dueAlerts: dueAlerts, alertSpeech: alertSpeech, weatherComment: weatherComment };
 }));
