@@ -317,7 +317,7 @@
     $('pending-section').hidden = !pending.length; clear($('pending-events'));
     pending.forEach(function (s) {
       var button = el('button','event-row'); button.style.gridTemplateColumns = 'minmax(0,1fr)';
-      var content = el('span',''); content.appendChild(el('span','row-title',s.title)); content.appendChild(el('span','row-meta',s.issue));
+      var content = el('span','pending-content'); content.appendChild(el('span','row-title',s.title)); content.appendChild(el('span','row-meta',s.issue));
       button.appendChild(content); button.addEventListener('click',function () { openDialog(s.title,'예약 확인'); detailLine('확인할 내용',s.issue); if (s.contact) detailLine('연락처',s.contact); if (s.memo) detailLine('메모',s.memo); });
       $('pending-events').appendChild(button);
     });

@@ -236,3 +236,8 @@ footer .text-button { font-size: 12px; min-height: 34px; }
 
 .handoff-prompt { display: block; width: 100%; min-height: 280px; resize: vertical; margin: 16px 0; padding: 14px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 15px; line-height: 1.65; }
 .handoff-prompt:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+/* Keep the reservation name and its confirmation note on the same line. */
+.pending-content { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pending-content .row-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pending-content .row-meta { display: inline-block; flex: 0 0 auto; white-space: nowrap; padding: 6px 8px; font-size: 12px; }
