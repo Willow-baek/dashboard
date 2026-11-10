@@ -4,7 +4,7 @@ window.DashboardConfig = {
   latitude: 37.5546,
   longitude: 126.9236,
   locationName: '서교동',
-  returnCountdown: { start: '2026-11-11', date: '2027-11-12', message: '집사야 집 관리 잘해라!' },
+  returnCountdown: { start: '2026-11-10', date: '2027-11-12', message: '집사야 집 관리 잘해라!' },
   payments: {
     endpoint: 'https://script.google.com/macros/s/AKfycbyJzHz9ZfAPbCA9zoUDv56V8OtjD7WIL9DoQCNWAOaXY1nySah47pln_MUCvfEjmBz2/exec',
     instructions: {
