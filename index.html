@@ -9,14 +9,15 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css?v=20261015-departure">
+  <link rel="stylesheet" href="legacy-look.css?v=20261110-briefing">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
-  <script defer src="config.js"></script>
+  <script defer src="config.js?v=20261110"></script>
   <script defer src="schedule.js?v=20261015-departure"></script>
   <script defer src="weather-scene.js"></script>
   <script defer src="facilities.js?v=20261014-facilities"></script>
-  <script defer src="app.js?v=20261015-departure"></script>
+  <script defer src="briefing.js?v=20261110"></script>
+  <script defer src="app.js?v=20261110-briefing"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -54,7 +55,7 @@
     <section class="message-band card" aria-label="오늘의 한마디">
       <p id="message-source" hidden>오늘의 한마디</p>
       <span id="sync-status" class="sr-only" role="status">일정 불러오는 중</span>
-      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div>
+      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy"><strong id="return-countdown" hidden></strong><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div>
     </section>
 
     <div class="schedule-layout card">
@@ -74,6 +75,7 @@
     <footer class="card">
       <span id="weather-summary"><i data-lucide="cloud-sun"></i><span id="weather-small">서교동 · 날씨 확인 중</span></span>
       <button id="facility-toggle" class="text-button" aria-expanded="false" aria-controls="facility-panel"><i data-lucide="building-2"></i> 시설 안내</button>
+      <button id="today-briefing" class="text-button" aria-haspopup="dialog" disabled>오늘 일정 브리핑</button>
       <div class="header-tools">
         <button id="sound-toggle" class="icon-button" title="음성 알림 켜기" aria-label="음성 알림 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
         <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>

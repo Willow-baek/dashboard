@@ -1,4 +1,27 @@
 /* Keep the original translucent dashboard while fitting the upgraded schedule controls. */
+.message-copy { min-width: 0; }
+#return-countdown { display: block; font-size: clamp(24px, 3.2vw, 40px); line-height: 1.25; font-variant-numeric: tabular-nums; }
+#return-countdown[hidden] { display: none; }
+.comeback-band #message-text { margin-top: 4px; font-size: clamp(17px, 2vw, 25px); }
+.briefing-panel { margin: 18px 0; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.briefing-panel h3 { font-size: 18px; margin: 0 0 12px; }
+.briefing-countdown { font-size: 24px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.briefing-event { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 5px 12px; width: 100%; min-height: 64px; padding: 14px 0; background: transparent; border: 0; border-bottom: 1px solid var(--line); text-align: left; color: inherit; }
+.briefing-time { font-variant-numeric: tabular-nums; }
+.briefing-event strong { overflow-wrap: anywhere; font-size: 18px; }
+.briefing-status { grid-column: 2; font-size: 14px; }
+.briefing-event:hover { background: rgba(128,128,128,.1); }
+.briefing-warning, .briefing-voice-note, .briefing-empty { font-size: 15px; line-height: 1.6; margin: 12px 0; }
+.briefing-read { border: 1px solid currentColor; padding: 8px 14px; min-height: 44px; }
+footer #today-briefing { min-height: 44px; white-space: nowrap; font-size: 14px; }
+#today-briefing:disabled, .briefing-read:disabled { opacity: .55; cursor: wait; }
+.briefing-event:focus-visible, #today-briefing:focus-visible, .briefing-read:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (max-width: 620px) {
+  footer { flex-wrap: wrap; }
+  .briefing-countdown { font-size: 21px; }
+  .briefing-event { grid-template-columns: 92px minmax(0,1fr); gap: 5px 8px; }
+  .briefing-event strong { font-size: 17px; }
+}
 :root { --line: rgba(128,128,128,.16); --accent: #306d93; --time-color: #286aaa; --theme-card: rgba(255,255,255,.46); }
 html, body { height: 100%; overflow: hidden; background: transparent; }
 body { color: var(--ink); }
@@ -40,7 +63,7 @@ body { color: var(--ink); }
 .today-section { flex-shrink: 0; max-height: 48%; padding: 0; margin: 0 0 14px; }
 .section-heading { min-height: 22px; margin: 0 0 5px; }
 .section-heading h2 { font-size: 13px; font-weight: 600; opacity: .7; }
-.section-heading > span { font-size: 10px; color: inherit; opacity: .55; }
+.section-heading > span { font-size: 11px; color: inherit; opacity: .75; }
 .today-events { gap: 0; }
 .event-card { display: grid; grid-template-columns: 190px minmax(0,1fr) 82px; align-items: center; gap: 14px; padding: 12px 8px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
 .event-card:last-child { border-bottom: 0; }

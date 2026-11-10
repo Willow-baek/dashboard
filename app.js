@@ -1,6 +1,8 @@
 (function () {
   'use strict';
   var S = window.Schedule;
+  var B = window.DashboardBriefing;
+  var briefingUid = null, briefingOpen = false, briefingReading = false;
   var config = window.DashboardConfig;
   var SHEET_ID = config.sheetId;
   var BASE = 'https://opensheet.elk.sh/' + SHEET_ID + '/';
@@ -90,6 +92,16 @@
     }).filter(function (d) { return d >= now(); });
   }
   function renderMessage() {
+    var comeback = B.countdown(state.settings,config.returnCountdown,now());
+    $('return-countdown').hidden = !comeback;
+    document.querySelector('.message-band').classList.toggle('comeback-band',!!comeback);
+    if (comeback) {
+      $('return-countdown').textContent = comeback.label;
+      $('message-text').textContent = comeback.message;
+      $('message-text').style.color = '';
+      $('message-source').textContent = '귀국 예정일 ' + comeback.date + ' · 한국 날짜 기준';
+      return;
+    }
     var quote = S.text(state.settings.quote);
     var applicable = !S.text(state.settings.quote_date) || S.date(state.settings.quote_date) === today();
     var freshWeather = state.weatherOK && Date.now() - state.weatherAt < 30 * 60000;
@@ -177,7 +189,70 @@
       if (phone) { var link = el('a','',e.contact); link.href = 'tel:' + phone; line.appendChild(link); } else line.appendChild(document.createTextNode(e.contact));
     }
     if (e.memo) detailLine('메모',e.memo);
+    if (!e.cancelled && S.coversDay(e,today())) attachBriefing(e.uid,false);
   }
+  function briefingModel() { return B.build(state.events,now(),briefingUid); }
+  function briefingWarning() {
+    if (!state.loaded) return '일정을 아직 불러오지 못했어. 새로고침하고 다시 확인해줘.';
+    if (!state.sheetOK || Date.now() - state.savedAt > 5 * 60000) return '최근 일정 연결을 확인하지 못했어. 마지막으로 저장된 일정 기준이니 변경사항을 확인해줘.';
+    return '';
+  }
+  function readBriefing() {
+    if (!state.sound) return;
+    if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
+    briefingReading = true;
+    speak((briefingWarning() ? briefingWarning() + ' ' : '') + (state.loaded ? briefingModel().speech : ''));
+  }
+  function updateBriefing() {
+    if (!briefingOpen || $('detail-overlay').hidden) return;
+    var model = briefingModel(), warning = briefingWarning();
+    $('briefing-countdown').textContent = state.loaded ? model.headline : '일정 불러오는 중';
+    $('briefing-warning').textContent = warning;
+    $('briefing-warning').hidden = !warning;
+    $('briefing-voice-note').textContent = !state.sound ? '음성이 꺼져 있어. 아래 버튼으로 켜고 들을 수 있어.' : state.soundBlocked ? '브라우저가 음성을 막았어. 아래 버튼을 다시 눌러줘.' : !window.speechSynthesis ? '이 브라우저는 음성 읽기를 지원하지 않아. 화면으로 확인해줘.' : '오늘 일정을 시간순으로 읽어줘.';
+    $('briefing-read').textContent = state.sound ? '브리핑 다시 듣기' : '음성 켜고 브리핑 듣기';
+    $('briefing-read').disabled = !state.loaded || !window.speechSynthesis;
+    if ($('briefing-list')) {
+      var signature = JSON.stringify(model.items.map(function (e) { return [e.uid,e.time,e.title,e.endDate]; }));
+      if ($('briefing-list').getAttribute('data-events') !== signature) {
+        clear($('briefing-list'));
+        if (!model.items.length) $('briefing-list').appendChild(el('p','briefing-empty','오늘은 등록된 일정이 없어.'));
+        model.items.forEach(function (e) {
+          var button = el('button','briefing-event');
+          button.appendChild(el('span','briefing-time',S.isOngoing(e,now()) ? '진행 중' : e.time ? S.clockLabel(e.time) : e.endDate ? '기간 일정' : '시간 미정'));
+          button.appendChild(el('strong','',e.title));
+          button.appendChild(el('span','briefing-status',B.status(e,now())));
+          button.setAttribute('data-event-uid',e.uid);
+          button.addEventListener('click',function () { openEvent(e); });
+          $('briefing-list').appendChild(button);
+        });
+        $('briefing-list').setAttribute('data-events',signature);
+      }
+      Array.prototype.forEach.call($('briefing-list').querySelectorAll('[data-event-uid]'),function (button) {
+        var event = model.items.filter(function (e) { return e.uid === button.getAttribute('data-event-uid'); })[0];
+        if (event) button.querySelector('.briefing-status').textContent = B.status(event,now());
+      });
+    }
+  }
+  function attachBriefing(uid,showList) {
+    briefingUid = uid || null; briefingOpen = true;
+    var section = el('section','briefing-panel');
+    section.setAttribute('aria-label','오늘 일정 브리핑');
+    if (!showList) section.appendChild(el('h3','','오늘 일정 브리핑'));
+    var countdown = el('p','briefing-countdown'); countdown.id = 'briefing-countdown'; section.appendChild(countdown);
+    var warning = el('p','briefing-warning'); warning.id = 'briefing-warning'; section.appendChild(warning);
+    if (showList) { var list = el('div'); list.id = 'briefing-list'; section.appendChild(list); }
+    var note = el('p','briefing-voice-note'); note.id = 'briefing-voice-note'; section.appendChild(note);
+    var button = el('button','text-button briefing-read'); button.id = 'briefing-read';
+    button.addEventListener('click',function () {
+      if (!state.sound) { state.sound = true; store(CACHE + '-sound',true); renderSoundButton(); }
+      activateSound(); readBriefing(); updateBriefing();
+    }); section.appendChild(button);
+    $('detail-content').insertBefore(section,$('detail-content').firstChild);
+    updateBriefing();
+    if (state.loaded) { activateSound(); readBriefing(); }
+  }
+  function openTodayBriefing() { openDialog('오늘 일정 브리핑',S.dateLabel(today())); attachBriefing(null,true); }
   function row(e, isToday) {
     var status = isToday ? eventState(e) : null;
     var button = el('button','event-row' + (isToday ? ' today-event ' + status.className : ''));
@@ -320,16 +395,23 @@
   function renderAll() {
     state.events = S.expand(state.schedules,state.exceptions,S.weekStart(today()),S.addDays(today(),42));
     renderClock(); renderStrip(); renderCalendar(); if (state.loaded) renderSchedules(); renderMessage(); renderFacilities();
+    $('today-briefing').disabled = !state.loaded;
+    updateBriefing();
     if (window.LegacyTheme) window.LegacyTheme.update(state.weatherOK && state.weather ? state.weather.current.weather_code : 0,new Date(Date.now() + 9 * 3600000).getUTCHours());
   }
   function openDialog(title,label) {
+    stopBriefing();
     state.facilityDetail = '';
     if ($('detail-overlay').hidden) state.focus = document.activeElement;
     $('detail-title').textContent = title; $('detail-label').textContent = label; clear($('detail-content'));
     $('detail-overlay').hidden = false; $('detail-close').focus();
   }
   function detailLine(label,content) { var line = el('div','detail-line'); line.appendChild(el('small','',label)); line.appendChild(document.createTextNode(content)); $('detail-content').appendChild(line); return line; }
-  function closeDialog() { state.facilityDetail = ''; $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
+  function stopBriefing() {
+    if (briefingReading && window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
+    briefingUid = null; briefingOpen = false; briefingReading = false;
+  }
+  function closeDialog() { stopBriefing(); state.facilityDetail = ''; $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
   function chime() {
     if (!state.sound || !state.audio) return;
     try {
@@ -418,6 +500,7 @@
     }
   });
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
+  $('today-briefing').addEventListener('click',openTodayBriefing);
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {
       if (state.sound && state.soundBlocked) { activateSound(); return; }
@@ -442,6 +525,7 @@
   renderAll(); icons(); loadSheet(); loadWeather();
   setInterval(function () { renderAll(); updateSync(false); },30000);
   setInterval(checkAlerts,10000);
+  setInterval(updateBriefing,1000);
   setInterval(loadSheet,60000); setInterval(loadWeather,600000);
   document.addEventListener('visibilitychange',function () { if (!document.hidden) { renderAll(); loadSheet(); loadWeather(); } });
   window.addEventListener('online',function () { loadSheet(); loadWeather(); });
