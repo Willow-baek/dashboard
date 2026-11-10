@@ -1,8 +1,17 @@
 /* Keep the original translucent dashboard while fitting the upgraded schedule controls. */
-.message-copy { min-width: 0; }
-#return-countdown { display: block; font-size: clamp(24px, 3.2vw, 40px); line-height: 1.25; font-variant-numeric: tabular-nums; }
+/* Long messages scroll only when they exceed the available single line. */
+.message-copy { min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.message-copy::-webkit-scrollbar { display: none; }
+.message-copy:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.message-track { display: inline-flex; align-items: baseline; gap: 14px; white-space: nowrap; width: max-content; max-width: none; }
+#return-countdown { display: inline; font-size: clamp(20px, 2.5vw, 30px); line-height: 1.35; font-variant-numeric: tabular-nums; }
 #return-countdown[hidden] { display: none; }
-.comeback-band #message-text { margin-top: 4px; font-size: clamp(17px, 2vw, 25px); }
+.message-track #message-text { display: inline; margin: 0; white-space: nowrap; overflow-wrap: normal; font-size: clamp(19px, 2vw, 25px); }
+#return-countdown:not([hidden])::after { content: ' ·'; }
+.message-copy.is-scrolling .message-track { animation: messageSlide var(--message-duration) linear infinite; }
+.message-copy:hover .message-track, .message-copy:focus .message-track, .page-hidden .message-track { animation-play-state: paused; }
+@keyframes messageSlide { 0%, 12%, 100% { transform: translateX(0); } 48%, 62% { transform: translateX(var(--message-offset)); } }
+@media (prefers-reduced-motion: reduce) { .message-copy.is-scrolling .message-track { animation: none; } }
 .briefing-panel { margin: 18px 0; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .briefing-panel h3 { font-size: 18px; margin: 0 0 12px; }
 .briefing-countdown { font-size: 24px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

@@ -93,19 +93,27 @@
       return new Date(new Date(e.date + 'T' + e.time + ':00+09:00').getTime() - e.travel * 60000);
     }).filter(function (d) { return d >= now(); });
   }
+  function fitMessage() {
+    var viewport = document.querySelector('.message-copy'), track = document.querySelector('.message-track');
+    var overflow = Math.max(0,track.scrollWidth - viewport.clientWidth);
+    viewport.style.setProperty('--message-offset',-overflow + 'px');
+    viewport.style.setProperty('--message-duration',Math.max(16,overflow / 25 * 2 + 6) + 's');
+    viewport.classList.toggle('is-scrolling',overflow > 1);
+  }
   function renderMessage() {
     var comeback = B.countdown(state.settings,config.returnCountdown,now());
     $('return-countdown').hidden = !comeback;
     document.querySelector('.message-band').classList.toggle('comeback-band',!!comeback);
-    if (comeback) {
-      $('return-countdown').textContent = comeback.label;
-      $('message-text').textContent = comeback.message;
-      $('message-text').style.color = '';
-      $('message-source').textContent = '귀국 예정일 ' + comeback.date + ' · 한국 날짜 기준';
-      return;
-    }
     var quote = S.text(state.settings.quote);
     var applicable = !S.text(state.settings.quote_date) || S.date(state.settings.quote_date) === today();
+    if (comeback) {
+      $('return-countdown').textContent = comeback.label;
+      $('message-text').textContent = quote && applicable ? quote : comeback.message;
+      $('message-text').style.color = quote && applicable ? state.settings.quote_color || '' : '';
+      $('message-source').textContent = '귀국 예정일 ' + comeback.date + ' · 한국 날짜 기준';
+      fitMessage();
+      return;
+    }
     var freshWeather = state.weatherOK && Date.now() - state.weatherAt < 30 * 60000;
     $('message-text').style.color = quote && applicable ? state.settings.quote_color || '' : '';
     if (quote && applicable) {
@@ -116,6 +124,7 @@
       $('message-text').textContent = advice || (state.weatherStatus === 'loading' ? '날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.' : '날씨 정보를 지금 확인하지 못했어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.');
       $('message-source').textContent = advice ? '오늘의 한마디 · 날씨를 보고' : state.weatherStatus === 'loading' ? '오늘의 한마디 · 날씨 확인 중' : '오늘의 한마디 · 날씨 확인 필요';
     }
+    fitMessage();
   }
   function loadWeather() {
     var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + config.latitude + '&longitude=' + config.longitude + '&current=temperature_2m,apparent_temperature,weather_code&hourly=precipitation_probability,apparent_temperature,wind_speed_10m&timezone=Asia%2FSeoul&forecast_days=2';
@@ -662,10 +671,11 @@
   setInterval(loadSheet,60000); setInterval(loadWeather,600000);
   setInterval(syncPayments,60000);
   function recoverPage() { renderAll(); loadSheet(); loadWeather(); syncPayments(); checkAlerts(); }
-  document.addEventListener('visibilitychange',function () { if (!document.hidden) recoverPage(); });
+  document.addEventListener('visibilitychange',function () { document.documentElement.classList.toggle('page-hidden',document.hidden); if (!document.hidden) recoverPage(); });
   window.addEventListener('pageshow',recoverPage);
   window.addEventListener('online',recoverPage);
   window.addEventListener('storage',function (event) { if (event.key === CACHE + '-alerts') notified = Object.assign({},notified,read(CACHE + '-alerts') || {}); });
-  window.addEventListener('resize',fitHeader);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeader);
+  window.addEventListener('resize',function () { fitHeader(); fitMessage(); });
+  if (window.ResizeObserver) new ResizeObserver(fitMessage).observe(document.querySelector('.message-copy'));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitHeader(); fitMessage(); });
 }());

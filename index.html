@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css?v=20261110-payments2">
+  <link rel="stylesheet" href="legacy-look.css?v=20261110-message">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
   <script defer src="config.js?v=20261110-countdown-now"></script>
@@ -18,7 +18,7 @@
   <script defer src="facilities.js?v=20261014-facilities"></script>
   <script defer src="briefing.js?v=20261110"></script>
   <script defer src="payments.js?v=20261110"></script>
-  <script defer src="app.js?v=20261110-payments3"></script>
+  <script defer src="app.js?v=20261110-message"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -56,7 +56,7 @@
     <section class="message-band card" aria-label="오늘의 한마디">
       <p id="message-source" hidden>오늘의 한마디</p>
       <span id="sync-status" class="sr-only" role="status">일정 불러오는 중</span>
-      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy"><strong id="return-countdown" hidden></strong><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div>
+      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy" tabindex="0" aria-label="오늘의 한마디 · 긴 문구는 좌우로 스크롤할 수 있어요"><div class="message-track"><strong id="return-countdown" hidden></strong><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div></div>
     </section>
 
     <div class="schedule-layout card">
