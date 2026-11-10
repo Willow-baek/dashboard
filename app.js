@@ -3,6 +3,8 @@
   var S = window.Schedule;
   var B = window.DashboardBriefing;
   var briefingUid = null, briefingOpen = false, briefingReading = false;
+  var P = window.DashboardPayments, paymentReceipts = [], paymentBusy = false;
+  var backgroundTestTimer = null;
   var config = window.DashboardConfig;
   var SHEET_ID = config.sheetId;
   var BASE = 'https://opensheet.elk.sh/' + SHEET_ID + '/';
@@ -177,6 +179,9 @@
       detailLine('수업 회차',e.package.lesson + '/' + e.package.size + ' · 예정 수업 기준');
       detailLine('결제',e.package.paid ? S.dateLabel(e.package.paidOn) + ' 결제한 묶음' : '이 묶음 결제 확인 필요');
       if (e.package.nextDate) detailLine('다음 묶음',S.dateLabel(e.package.nextDate) + ' 수업 전 결제 필요');
+      var instruction = config.payments && config.payments.instructions[e.id];
+      if (instruction && instruction.amount) detailLine('묶음 금액',Number(instruction.amount).toLocaleString('ko-KR') + '원 · ' + e.package.size + '회 · ' + instruction.method);
+      if (instruction) detailLine('결제 방법',instruction.detail);
     }
     if (e.changed && e.date !== e.original) detailLine('원래 날짜', S.dateLabel(e.original));
     if (e.travel && e.time && !e.cancelled) {
@@ -265,9 +270,7 @@
     button.appendChild(el('span','row-time' + (e.endDate ? ' period-time' : '') + (e.needsTime ? ' needs-time' : ''),ongoing ? S.periodLabel(e.endDate,e.endDate) + '까지' : e.endDate && !e.time ? '기간 일정' : eventTimeLabel(e)));
     button.appendChild(el('span','row-title',e.title));
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
-    if (e.package && (!e.package.paid || e.package.lesson === e.package.size)) {
-      button.appendChild(el('span','package-reminder',!e.package.paid ? '이번 묶음 결제 확인 필요' : e.package.nextDate ? S.dateLabel(e.package.nextDate) + ' 수업 전 다음 묶음 결제' : '이번 묶음 마지막 수업'));
-    }
+    // Payment reminders live together above the schedule, not duplicated on every lesson.
     if (isToday && !ongoing && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
       var reminder = status.className === 'urgent' || status.className === 'past' ? status.label : '';
       if (e.travel && e.time && status.className !== 'past') {
@@ -285,6 +288,7 @@
     else events.forEach(function (e) { list.appendChild(row(e)); });
   }
   function renderSchedules() {
+    renderPayments();
     var items = S.agenda(state.events,now());
     var todays = items.filter(function (e) { return S.coversDay(e,today()); });
     todays.sort(function (a,b) {
@@ -342,7 +346,7 @@
     $('weekly-toggle').title = state.calendarMode === 0 ? '주간 달력 열기' : state.calendarMode === 1 ? '월간 달력 열기' : '달력 접기';
     if (!state.calendarMode) { fitHeader(); return; }
     var range = calendarBounds();
-    var events = S.expand(state.schedules,state.exceptions,range.start,range.end);
+    var events = S.expand(displaySchedules(),state.exceptions,range.start,range.end);
     $('calendar-title').textContent = state.calendarMode === 1 ? S.dateLabel(range.start) + ' — ' + shortDate(range.end) : +state.calendarDate.slice(0,4) + '년 ' + +state.calendarDate.slice(5,7) + '월';
     $('calendar-mode-label').textContent = state.calendarMode === 1 ? '주간 일정' : '월간 일정';
     $('mode-week').setAttribute('aria-pressed',String(state.calendarMode === 1));
@@ -393,7 +397,7 @@
     state.facilityDetail = id; renderFacilityDetail(id);
   }
   function renderAll() {
-    state.events = S.expand(state.schedules,state.exceptions,S.weekStart(today()),S.addDays(today(),42));
+    state.events = S.expand(displaySchedules(),state.exceptions,S.weekStart(today()),S.addDays(today(),42));
     renderClock(); renderStrip(); renderCalendar(); if (state.loaded) renderSchedules(); renderMessage(); renderFacilities();
     $('today-briefing').disabled = !state.loaded;
     updateBriefing();
@@ -412,6 +416,86 @@
     briefingUid = null; briefingOpen = false; briefingReading = false;
   }
   function closeDialog() { stopBriefing(); state.facilityDetail = ''; $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
+  function displaySchedules() {
+    return state.schedules.map(function (schedule) {
+      var receipt = paymentReceipts.filter(function (record) { return record.id === schedule.id; })[0];
+      return P.receipt(schedule,receipt);
+    });
+  }
+  function paymentInfo(id) { return config.payments && config.payments.instructions[id] || {}; }
+  function paymentRequest(payload) {
+    var endpoint = config.payments && config.payments.endpoint;
+    var key = read(CACHE + '-payment-key');
+    if (!endpoint || !key) return Promise.reject(new Error('먼저 가족 결제기록을 연결해줘.'));
+    return new Promise(function (resolve,reject) {
+      var controller = window.AbortController ? new AbortController() : null;
+      var timer = setTimeout(function () { if (controller) controller.abort(); reject(new Error('저장 응답을 확인하지 못했어. 새로고침해서 기록을 확인한 뒤 다시 시도해줘.')); },25000);
+      fetch(endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({},payload,{key:key})),signal:controller ? controller.signal : undefined})
+        .then(function (response) { if (!response.ok) throw new Error('결제기록 연결을 확인해줘.'); return response.json(); })
+        .then(function (data) { if (!data.ok || !Array.isArray(data.receipts)) throw new Error(data.error || '기록을 확인하지 못했어.'); clearTimeout(timer); resolve(data); })
+        .catch(function (error) { clearTimeout(timer); reject(error); });
+    });
+  }
+  function syncPayments() {
+    if (paymentBusy || !(config.payments && config.payments.endpoint) || !read(CACHE + '-payment-key')) return;
+    paymentBusy = true;
+    paymentRequest({action:'list'}).then(function (data) { paymentReceipts = data.receipts; $('payment-connect').textContent = '결제기록 연결됨'; renderAll(); })
+      .catch(function () { $('payment-connect').textContent = '결제기록 연결 확인'; })
+      .then(function () { paymentBusy = false; });
+  }
+  function openPaymentConnection() {
+    openDialog('가족 결제기록 연결','모든 기기에서 같은 결제 기록 사용');
+    detailLine('연결 안내','가족 연결 코드를 한 번 입력하면 이 기기에서도 결제 완료 기록을 함께 볼 수 있어.');
+    if (!(config.payments && config.payments.endpoint)) { detailLine('설정 중','공유 저장소를 아직 활성화하지 않았어. 활성화 후 연결할 수 있어.'); return; }
+    var label = el('label','payment-field','가족 연결 코드');
+    var input = el('input'); input.type = 'password'; input.autocomplete = 'off'; input.required = true; label.appendChild(input); $('detail-content').appendChild(label);
+    var feedback = el('p','payment-feedback'); feedback.setAttribute('role','status'); $('detail-content').appendChild(feedback);
+    var button = el('button','text-button payment-confirm','연결하기');
+    button.addEventListener('click',function () {
+      if (!input.value.trim()) { feedback.textContent = '연결 코드를 입력해줘.'; input.focus(); return; }
+      var previous = read(CACHE + '-payment-key'); store(CACHE + '-payment-key',input.value.trim()); button.disabled = true;
+      paymentRequest({action:'list'}).then(function (data) { paymentReceipts = data.receipts; $('payment-connect').textContent = '결제기록 연결됨'; openDialog('결제기록을 연결했어','이 기기에서 사용할 준비 완료'); detailLine('공유 저장','결제일과 새 묶음 시작일이 가족 기기에 함께 반영돼.'); renderAll(); })
+        .catch(function (error) { store(CACHE + '-payment-key',previous || ''); feedback.textContent = error.message; button.disabled = false; });
+    }); $('detail-content').appendChild(button);
+  }
+  function openPayment(payment) {
+    var info = paymentInfo(payment.id), title = info.label || payment.event.title.replace(/\s*\(\d+\/\d+\)\s*$/,'') + ' 결제';
+    openDialog(title,'결제할 것');
+    detailLine('결제 기한',S.dateLabel(payment.dueDate) + ' 수업 시작 전 · ' + payment.label);
+    detailLine('결제 방법',info.detail || payment.event.memo || '방문할 때 결제 방법을 확인해줘.');
+    if (info.amount) detailLine('선결제 금액',Number(info.amount).toLocaleString('ko-KR') + '원 · ' + payment.event.package.size + '회 · ' + info.method);
+    detailLine('기록할 내용','오늘(' + S.dateLabel(today()) + ') 결제한 것으로 기록하고, 새 ' + payment.event.package.size + '회 묶음은 ' + S.dateLabel(payment.dueDate) + '부터 시작해. 실제 결제를 마친 뒤 눌러줘.');
+    if (!(config.payments && config.payments.endpoint) || !read(CACHE + '-payment-key')) {
+      var connect = el('button','text-button payment-confirm','결제기록 연결하기'); connect.addEventListener('click',openPaymentConnection); $('detail-content').appendChild(connect); return;
+    }
+    var amountLabel = el('label','payment-field','실제 결제 금액 (선택)');
+    var amount = el('input'); amount.type = 'number'; amount.min = '0'; amount.max = '10000000'; amount.step = '1'; amount.value = info.amount || ''; amountLabel.appendChild(amount); $('detail-content').appendChild(amountLabel);
+    var feedback = el('p','payment-feedback'); feedback.setAttribute('role','status'); $('detail-content').appendChild(feedback);
+    var button = el('button','text-button payment-confirm','오늘 결제했어요');
+    var requestId = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + '-payment';
+    button.addEventListener('click',function () {
+      if (!amount.checkValidity()) { amount.reportValidity(); return; }
+      button.disabled = true; feedback.textContent = '가족 결제기록에 저장 중…';
+      paymentRequest({action:'record',id:payment.id,packageStart:payment.dueDate,requestId:requestId,amount:amount.value,method:info.method || '미입력'})
+        .then(function (data) { paymentReceipts = data.receipts; renderAll(); openDialog('결제 기록을 저장했어','가족 기기에 함께 반영'); detailLine('결제일',S.dateLabel(today())); detailLine('새 묶음 시작',S.dateLabel(payment.dueDate)); detailLine('안내','이번 결제 알림을 숨겼어. 다음 묶음 결제 7일 전부터 다시 알려줄게.'); })
+        .catch(function (error) { feedback.textContent = error.message; button.disabled = false; });
+    }); $('detail-content').appendChild(button);
+  }
+  function renderPayments() {
+    var payments = P.reminders(state.events,now());
+    $('payment-section').hidden = !payments.length;
+    var signature = JSON.stringify(payments.map(function (p) { return [p.id,p.dueDate,p.days]; }));
+    if ($('payment-reminders').getAttribute('data-payments') === signature) return;
+    clear($('payment-reminders'));
+    payments.forEach(function (p) {
+      var info = paymentInfo(p.id);
+      var button = el('button','payment-reminder' + (p.urgent ? ' payment-urgent' : ''));
+      button.setAttribute('aria-haspopup','dialog');
+      button.appendChild(el('span','',info.label || p.event.title + ' 결제'));
+      button.appendChild(el('strong','payment-dday',p.label));
+      button.addEventListener('click',function () { openPayment(p); }); $('payment-reminders').appendChild(button);
+    }); $('payment-reminders').setAttribute('data-payments',signature);
+  }
   function chime() {
     if (!state.sound || !state.audio) return;
     try {
@@ -446,7 +530,13 @@
     } catch (e) { chime(); }
   }
   function checkAlerts() {
+    if (navigator.locks && navigator.locks.request) {
+      navigator.locks.request(CACHE + '-alert-delivery',{ifAvailable:true},function (lock) { if (lock) deliverAlerts(); }).catch(deliverAlerts);
+    } else deliverAlerts();
+  }
+  function deliverAlerts() {
     if (!state.loaded || !state.sheetOK || Date.now() - state.savedAt > 5 * 60000) return;
+    notified = Object.assign({},notified,read(CACHE + '-alerts') || {});
     var candidates = S.dueAlerts(state.events,notified,now());
     if (!candidates.length) return;
     candidates.forEach(function (c) { notified[c.id] = today(); }); store(CACHE + '-alerts',notified);
@@ -458,6 +548,46 @@
     }).join(' / ');
     state.lastAlertText = candidates.map(S.alertSpeech).join(' ');
     $('alert').hidden = false; speak(state.lastAlertText);
+    if (read(CACHE + '-desktop-notifications') && 'Notification' in window && Notification.permission === 'granted' && (document.hidden || !document.hasFocus())) {
+      try {
+        var notice = new Notification('지운아, 일정 확인해줘',{body:state.lastAlertText,tag:'home-dashboard-schedule'});
+        notice.onclick = function () { window.focus(); activateSound(); openEvent(candidates[0].event); notice.close(); };
+      } catch (error) { /* The in-page alert and voice remain available if system notifications fail. */ }
+    }
+  }
+  function openBackgroundSetup() {
+    openDialog('PC 알림 준비','다른 작업 중에도 일정 확인');
+    detailLine('현재 음성',!window.speechSynthesis ? '이 브라우저에서는 음성 읽기를 지원하지 않아.' : !state.sound ? '꺼짐 · 아래에서 음성 테스트를 눌러 켤 수 있어.' : state.soundBlocked ? '브라우저가 재생을 막았어. 음성 테스트를 한 번 눌러줘.' : '켜짐 · 아래 버튼으로 실제 소리를 확인해줘.');
+    detailLine('동작 조건','이 페이지와 브라우저를 열어두면 최소화하거나 다른 탭을 보는 동안에도 일정 확인과 음성을 시도해. 브라우저가 탭 실행을 중지하거나 PC가 절전·종료되면 보장할 수 없어.');
+    detailLine('Chrome 설정','설정 → 성능 → 항상 활성 상태로 유지할 사이트에 willow-baek.github.io를 추가해줘. 탭도 고정해두면 좋아.');
+    detailLine('처음 한 번','브라우저가 음성을 허용하도록 이 기기에서 음성 테스트를 눌러줘. 새로 연 페이지에서 다시 필요할 수 있어.');
+    var voice = el('button','text-button payment-confirm','음성 테스트');
+    voice.disabled = !window.speechSynthesis;
+    voice.addEventListener('click',function () { state.sound = true; store(CACHE + '-sound',true); activateSound(); renderSoundButton(); speak('알림 테스트야. 다른 작업을 할 때도 일정 시간이 다가오면 알려줄게. 브라우저는 닫지 말아줘.'); });
+    $('detail-content').appendChild(voice);
+    var feedback = el('p','payment-feedback'); feedback.setAttribute('role','status'); $('detail-content').appendChild(feedback);
+    var delayed = el('button','text-button payment-confirm','1분 뒤 백그라운드 테스트');
+    delayed.disabled = !window.speechSynthesis || backgroundTestTimer !== null;
+    delayed.addEventListener('click',function () {
+      state.sound = true; store(CACHE + '-sound',true); activateSound(); renderSoundButton();
+      delayed.disabled = true;
+      feedback.textContent = '다른 창으로 전환하거나 브라우저를 최소화해줘. 약 1분 뒤 테스트 음성을 읽을게. 브라우저 실행 정책에 따라 늦어질 수 있어.';
+      backgroundTestTimer = setTimeout(function () {
+        backgroundTestTimer = null; delayed.disabled = false;
+        speak('백그라운드 음성 테스트야. 다른 작업 중에도 이 소리가 들렸는지 확인해줘.');
+        feedback.textContent = state.sound ? '테스트 음성을 요청했어. 실제 소리가 들렸는지 확인해줘.' : '음성이 꺼져 있어서 테스트를 읽지 않았어.';
+      },60000);
+    }); $('detail-content').appendChild(delayed);
+    var notify = el('button','text-button payment-confirm','Windows 알림도 켜기');
+    if (!('Notification' in window)) { notify.disabled = true; feedback.textContent = '이 브라우저는 시스템 알림을 지원하지 않아. 음성과 화면 안내를 사용해줘.'; }
+    notify.addEventListener('click',function () {
+      Notification.requestPermission().then(function (permission) {
+        store(CACHE + '-desktop-notifications',permission === 'granted');
+        feedback.textContent = permission === 'granted' ? '시스템 알림을 켰어. Windows 알림 설정과 방해 금지 모드도 확인해줘.' : '알림을 허용하지 않았어. 브라우저 사이트 설정에서 변경할 수 있어. 음성과 화면 안내는 계속 사용할 수 있어.';
+      }).catch(function () { feedback.textContent = '브라우저 사이트 설정에서 알림 권한을 확인해줘.'; });
+    }); $('detail-content').appendChild(notify);
+    if ('Notification' in window) detailLine('시스템 알림',Notification.permission === 'granted' && read(CACHE + '-desktop-notifications') ? '켜짐' : Notification.permission === 'denied' ? '브라우저에서 차단됨' : '아직 켜지 않음');
+    detailLine('중복 방지','같은 브라우저 프로필에서 대시보드를 여러 탭으로 열어도 이미 전달한 단계의 알림은 반복하지 않아. 다른 브라우저·프로필은 각각 확인이 필요해.');
   }
   function renderSoundButton() {
     var label = state.sound ? state.soundBlocked ? '음성 알림 활성화' : '음성 알림 끄기' : '음성 알림 켜기';
@@ -501,6 +631,8 @@
   });
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
   $('today-briefing').addEventListener('click',openTodayBriefing);
+  $('payment-connect').addEventListener('click',openPaymentConnection);
+  $('background-setup').addEventListener('click',openBackgroundSetup);
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {
       if (state.sound && state.soundBlocked) { activateSound(); return; }
@@ -522,13 +654,17 @@
   Object.keys(notified).forEach(function (key) { if (notified[key] < S.addDays(today(),-1)) delete notified[key]; });
   var cached = read(CACHE);
   if (cached && Array.isArray(cached.rows) && cached.savedAt) { try { hydrate(cached); updateSync(true); } catch (e) {} }
-  renderAll(); icons(); loadSheet(); loadWeather();
+  renderAll(); icons(); loadSheet(); loadWeather(); syncPayments();
   setInterval(function () { renderAll(); updateSync(false); },30000);
   setInterval(checkAlerts,10000);
   setInterval(updateBriefing,1000);
   setInterval(loadSheet,60000); setInterval(loadWeather,600000);
-  document.addEventListener('visibilitychange',function () { if (!document.hidden) { renderAll(); loadSheet(); loadWeather(); } });
-  window.addEventListener('online',function () { loadSheet(); loadWeather(); });
+  setInterval(syncPayments,60000);
+  function recoverPage() { renderAll(); loadSheet(); loadWeather(); syncPayments(); checkAlerts(); }
+  document.addEventListener('visibilitychange',function () { if (!document.hidden) recoverPage(); });
+  window.addEventListener('pageshow',recoverPage);
+  window.addEventListener('online',recoverPage);
+  window.addEventListener('storage',function (event) { if (event.key === CACHE + '-alerts') notified = Object.assign({},notified,read(CACHE + '-alerts') || {}); });
   window.addEventListener('resize',fitHeader);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeader);
 }());

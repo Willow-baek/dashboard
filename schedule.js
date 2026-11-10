@@ -164,7 +164,8 @@
       history.forEach(function (e,i) {
         var cycle = Math.floor(i / s.packageSize), lesson = i % s.packageSize + 1;
         counts[e.uid] = { lesson:lesson, size:s.packageSize, paid:cycle === 0 && !!s.paidOn,
-          paidOn:cycle === 0 ? s.paidOn : '', nextDate:history[(cycle + 1) * s.packageSize] ? history[(cycle + 1) * s.packageSize].date : '' };
+          paidOn:cycle === 0 ? s.paidOn : '', startDate:history[cycle * s.packageSize].date,
+          nextDate:history[(cycle + 1) * s.packageSize] ? history[(cycle + 1) * s.packageSize].date : '' };
       });
       results.forEach(function (e) {
         if (e.id !== s.id || !counts[e.uid]) return;

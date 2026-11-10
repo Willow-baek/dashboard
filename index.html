@@ -9,15 +9,16 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css?v=20261110-briefing">
+  <link rel="stylesheet" href="legacy-look.css?v=20261110-payments2">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
-  <script defer src="config.js?v=20261110"></script>
-  <script defer src="schedule.js?v=20261015-departure"></script>
+  <script defer src="config.js?v=20261110-payments2"></script>
+  <script defer src="schedule.js?v=20261110-payments2"></script>
   <script defer src="weather-scene.js"></script>
   <script defer src="facilities.js?v=20261014-facilities"></script>
   <script defer src="briefing.js?v=20261110"></script>
-  <script defer src="app.js?v=20261110-briefing"></script>
+  <script defer src="payments.js?v=20261110"></script>
+  <script defer src="app.js?v=20261110-payments2"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -59,6 +60,7 @@
     </section>
 
     <div class="schedule-layout card">
+      <section id="payment-section" hidden aria-label="결제할 것"><h2>결제할 것</h2><div id="payment-reminders"></div></section>
       <section class="today-section" aria-labelledby="today-heading">
         <div hidden><h2 id="today-heading">오늘 일정</h2><span id="today-count"></span></div>
         <div id="today-events" class="today-events"><p class="empty">일정을 불러오고 있어요.</p></div>
@@ -76,6 +78,8 @@
       <span id="weather-summary"><i data-lucide="cloud-sun"></i><span id="weather-small">서교동 · 날씨 확인 중</span></span>
       <button id="facility-toggle" class="text-button" aria-expanded="false" aria-controls="facility-panel"><i data-lucide="building-2"></i> 시설 안내</button>
       <button id="today-briefing" class="text-button" aria-haspopup="dialog" disabled>오늘 일정 브리핑</button>
+      <button id="payment-connect" class="text-button" aria-haspopup="dialog">결제기록 연결</button>
+      <button id="background-setup" class="text-button" aria-haspopup="dialog">PC 알림 준비</button>
       <div class="header-tools">
         <button id="sound-toggle" class="icon-button" title="음성 알림 켜기" aria-label="음성 알림 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
         <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>

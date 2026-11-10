@@ -13,6 +13,24 @@
 .briefing-event:hover { background: rgba(128,128,128,.1); }
 .briefing-warning, .briefing-voice-note, .briefing-empty { font-size: 15px; line-height: 1.6; margin: 12px 0; }
 .briefing-read { border: 1px solid currentColor; padding: 8px 14px; min-height: 44px; }
+#payment-section { flex: 0 0 auto; padding: 0 8px 14px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+#payment-section h2 { margin: 0 0 8px; font-size: 16px; }
+#payment-reminders { display: flex; flex-wrap: wrap; gap: 8px; }
+.payment-reminder { display: inline-flex; align-items: center; gap: 14px; min-height: 44px; padding: 10px 14px; border: 1px solid currentColor; border-radius: 10px; background: transparent; color: inherit; font-size: 16px; }
+.payment-dday { font-variant-numeric: tabular-nums; }
+.payment-urgent .payment-dday { animation: paymentPulse 1.8s ease-in-out infinite; }
+@keyframes paymentPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+.payment-field { display: grid; gap: 8px; margin: 18px 0; font-size: 16px; }
+.payment-field input { min-width: 0; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid currentColor; border-radius: 8px; font: inherit; color: inherit; background: transparent; }
+.payment-confirm { min-height: 44px; padding: 10px 16px; border: 1px solid currentColor; }
+.payment-confirm:disabled { opacity: .6; cursor: wait; }
+.payment-feedback { font-size: 15px; line-height: 1.5; margin: 12px 0; }
+footer #payment-connect, footer #background-setup { font-size: 12px; min-height: 44px; }
+footer { flex-wrap: wrap; }
+.payment-confirm + .payment-confirm { margin-left: 8px; }
+.payment-reminder:hover, .payment-confirm:hover { background: rgba(128,128,128,.12); }
+.payment-reminder:focus-visible, .payment-confirm:focus-visible, .payment-field input:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .payment-urgent .payment-dday { animation: none; } }
 footer #today-briefing { min-height: 44px; white-space: nowrap; font-size: 14px; }
 #today-briefing:disabled, .briefing-read:disabled { opacity: .55; cursor: wait; }
 .briefing-event:focus-visible, #today-briefing:focus-visible, .briefing-read:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
