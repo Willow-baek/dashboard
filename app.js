@@ -482,6 +482,7 @@
     }); $('detail-content').appendChild(button);
   }
   function renderPayments() {
+    if (!state.sheetOK && Date.now() - state.savedAt > 5 * 60000) { $('payment-section').hidden = true; return; }
     var payments = P.reminders(state.events,now());
     $('payment-section').hidden = !payments.length;
     var signature = JSON.stringify(payments.map(function (p) { return [p.id,p.dueDate,p.days]; }));
