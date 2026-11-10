@@ -4,7 +4,7 @@
   var B = window.DashboardBriefing;
   var briefingUid = null, briefingOpen = false, briefingReading = false;
   var P = window.DashboardPayments, paymentReceipts = [], paymentBusy = false;
-  var backgroundTestTimer = null;
+  var backgroundTestTimer = null, cloudVoice = null, cloudVoiceStatus = "";
   var config = window.DashboardConfig;
   var SHEET_ID = config.sheetId;
   var BASE = 'https://opensheet.elk.sh/' + SHEET_ID + '/';
@@ -213,7 +213,7 @@
   }
   function readBriefing() {
     if (!state.sound) return;
-    if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
+    stopSpeech();
     briefingReading = true;
     speak((briefingWarning() ? briefingWarning() + ' ' : '') + (state.loaded ? briefingModel().speech : ''));
   }
@@ -223,9 +223,9 @@
     $('briefing-countdown').textContent = state.loaded ? model.headline : '일정 불러오는 중';
     $('briefing-warning').textContent = warning;
     $('briefing-warning').hidden = !warning;
-    $('briefing-voice-note').textContent = !state.sound ? '음성이 꺼져 있어. 아래 버튼으로 켜고 들을 수 있어.' : state.soundBlocked ? '브라우저가 음성을 막았어. 아래 버튼을 다시 눌러줘.' : !window.speechSynthesis ? '이 브라우저는 음성 읽기를 지원하지 않아. 화면으로 확인해줘.' : '오늘 일정을 시간순으로 읽어줘.';
+    $('briefing-voice-note').textContent = !state.sound ? '음성이 꺼져 있어. 아래 버튼으로 켜고 들을 수 있어.' : state.soundBlocked ? '브라우저가 음성을 막았어. 아래 버튼을 다시 눌러줘.' : !speechAvailable() ? '이 브라우저는 음성 읽기를 지원하지 않아. 화면으로 확인해줘.' : cloudVoiceEnabled() ? cloudVoiceStatus || 'Google 한국어 음성으로 읽어줘.' : '오늘 일정을 시간순으로 읽어줘.';
     $('briefing-read').textContent = state.sound ? '브리핑 다시 듣기' : '음성 켜고 브리핑 듣기';
-    $('briefing-read').disabled = !state.loaded || !window.speechSynthesis;
+    $('briefing-read').disabled = !state.loaded || !speechAvailable();
     if ($('briefing-list')) {
       var signature = JSON.stringify(model.items.map(function (e) { return [e.uid,e.time,e.title,e.endDate]; }));
       if ($('briefing-list').getAttribute('data-events') !== signature) {
@@ -421,7 +421,7 @@
   }
   function detailLine(label,content) { var line = el('div','detail-line'); line.appendChild(el('small','',label)); line.appendChild(document.createTextNode(content)); $('detail-content').appendChild(line); return line; }
   function stopBriefing() {
-    if (briefingReading && window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; }
+    if (briefingReading) stopSpeech();
     briefingUid = null; briefingOpen = false; briefingReading = false;
   }
   function closeDialog() { stopBriefing(); state.facilityDetail = ''; $('detail-overlay').hidden = true; if (state.focus && document.contains(state.focus)) state.focus.focus(); }
@@ -496,14 +496,19 @@
     $('payment-section').hidden = !payments.length;
     var signature = JSON.stringify(payments.map(function (p) { return [p.id,p.dueDate,p.days]; }));
     if ($('payment-reminders').getAttribute('data-payments') === signature) return;
+    if (window.DashboardPaymentPet) window.DashboardPaymentPet.reset();
     clear($('payment-reminders'));
     payments.forEach(function (p) {
       var info = paymentInfo(p.id);
       var button = el('button','payment-reminder' + (p.urgent ? ' payment-urgent' : ''));
       button.setAttribute('aria-haspopup','dialog');
-      button.appendChild(el('span','',info.label || p.event.title + ' 결제'));
+      button.appendChild(el('span','payment-label',info.label || p.event.title + ' 결제'));
       button.appendChild(el('strong','payment-dday',p.label));
-      button.addEventListener('click',function () { openPayment(p); }); $('payment-reminders').appendChild(button);
+      button.addEventListener('click',function () { openPayment(p); });
+      var lane = el('div','payment-lane'), convoy = el('div','payment-convoy');
+      var pet = el('img','payment-cat'); pet.src = 'assets/payment-cat.png'; pet.alt = ''; pet.setAttribute('aria-hidden','true'); pet.width = 60; pet.height = 60;
+      convoy.appendChild(pet); convoy.appendChild(button); lane.appendChild(convoy); $('payment-reminders').appendChild(lane);
+      if (window.DashboardPaymentPet) window.DashboardPaymentPet.attach(lane,convoy);
     }); $('payment-reminders').setAttribute('data-payments',signature);
   }
   function chime() {
@@ -518,8 +523,38 @@
       });
     } catch (e) {}
   }
+  function cloudVoiceEnabled() { return !!(config.voice && config.voice.enabled && window.DashboardCloudVoice); }
+  function speechAvailable() { return cloudVoiceEnabled() ? !!(window.AudioContext || window.webkitAudioContext) : !!window.speechSynthesis; }
+  function stopSpeech() {
+    if (cloudVoice) cloudVoice.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    state.speech = [];
+  }
   function speak(text) {
     if (!state.sound) return;
+    if (cloudVoiceEnabled()) {
+      if (!cloudVoice) cloudVoice = window.DashboardCloudVoice.create({
+        context:function () { return state.audio; },
+        decode:function (content) { var raw = atob(content), bytes = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i); return bytes.buffer; },
+        request:function (text) {
+          var key = read(CACHE + '-payment-key');
+          if (!key) return Promise.resolve({ok:false,code:'not_connected',error:'Google 음성을 쓰려면 가족 연결 코드를 먼저 연결해줘.'});
+          var controller = new AbortController(), timer = setTimeout(function () { controller.abort(); },25000);
+          return fetch(config.payments.endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'tts',key:key,text:text}),signal:controller.signal})
+            .then(function (response) { if (!response.ok) throw new Error('음성 응답 오류'); return response.json(); }).finally(function () { clearTimeout(timer); });
+        },
+        status:function (code,message) {
+          cloudVoiceStatus = message;
+          state.soundBlocked = code === 'blocked'; renderSoundButton();
+          if ($('cloud-voice-status')) $('cloud-voice-status').textContent = message;
+          if ($('briefing-voice-note') && briefingOpen) $('briefing-voice-note').textContent = message;
+          if (code === 'monthly_limit' || code === 'not_connected' || code === 'error' || code === 'provider_error') {
+            $('alert-title').textContent = '음성 연결 확인'; $('alert-text').textContent = message; $('alert').hidden = false; chime();
+          }
+        }
+      });
+      cloudVoice.speak('지운아. ' + text); return;
+    }
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { chime(); return; }
     try {
       var utterance = new SpeechSynthesisUtterance('지운아. ' + text);
@@ -565,19 +600,37 @@
       } catch (error) { /* The in-page alert and voice remain available if system notifications fail. */ }
     }
   }
+  function openBrotherPrompt() {
+    var task = window.DashboardHandoff;
+    openDialog('지운용 프롬프트',task.updated + ' 업데이트');
+    detailLine('이번 작업',task.summary);
+    detailLine('사용 방법','아래 내용을 복사해서 지운이 PC의 코덱스에 붙여넣어줘. 오전 8시 앱 열기 자동화는 이미 설정되어 있어.');
+    var text = el('textarea','handoff-prompt'); text.readOnly = true; text.value = task.prompt;
+    text.setAttribute('aria-label','지운이 PC 코덱스에 전달할 프롬프트'); $('detail-content').appendChild(text);
+    var feedback = el('p','payment-feedback'); feedback.setAttribute('role','status');
+    var copy = el('button','text-button payment-confirm','프롬프트 복사');
+    copy.addEventListener('click',function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text.value).then(function () { feedback.textContent = '복사했어. 지운이 PC 코덱스에 붙여넣어줘.'; }).catch(selectPrompt);
+      else selectPrompt();
+    });
+    function selectPrompt() { text.focus(); text.select(); feedback.textContent = '전체 문구를 선택했어. Ctrl+C 또는 Command+C로 복사해줘.'; }
+    $('detail-content').appendChild(copy); $('detail-content').appendChild(feedback);
+    var tools = el('button','text-button payment-confirm','음성 확인 도구'); tools.addEventListener('click',openBackgroundSetup); $('detail-content').appendChild(tools);
+  }
   function openBackgroundSetup() {
-    openDialog('PC 알림 준비','다른 작업 중에도 일정 확인');
-    detailLine('현재 음성',!window.speechSynthesis ? '이 브라우저에서는 음성 읽기를 지원하지 않아.' : !state.sound ? '꺼짐 · 아래에서 음성 테스트를 눌러 켤 수 있어.' : state.soundBlocked ? '브라우저가 재생을 막았어. 음성 테스트를 한 번 눌러줘.' : '켜짐 · 아래 버튼으로 실제 소리를 확인해줘.');
+    openDialog('음성 확인 도구','지운이 PC에서 소리 확인');
+    detailLine('현재 음성',!speechAvailable() ? '이 브라우저에서는 음성 읽기를 지원하지 않아.' : !state.sound ? '꺼짐 · 아래에서 음성 테스트를 눌러 켤 수 있어.' : state.soundBlocked ? '브라우저가 재생을 막았어. 음성 테스트를 한 번 눌러줘.' : '켜짐 · 아래 버튼으로 실제 소리를 확인해줘.');
+    var voiceStatus = el('p','payment-feedback',cloudVoiceEnabled() ? cloudVoiceStatus || 'Google Cloud TTS · 한국어 Neural2 · 월 5만 자 자동 중단' : 'Google Cloud TTS 연결 전 · 현재는 브라우저 한국어 음성'); voiceStatus.id = 'cloud-voice-status'; $('detail-content').appendChild(voiceStatus);
     detailLine('동작 조건','이 페이지와 브라우저를 열어두면 최소화하거나 다른 탭을 보는 동안에도 일정 확인과 음성을 시도해. 브라우저가 탭 실행을 중지하거나 PC가 절전·종료되면 보장할 수 없어.');
     detailLine('Chrome 설정','설정 → 성능 → 항상 활성 상태로 유지할 사이트에 willow-baek.github.io를 추가해줘. 탭도 고정해두면 좋아.');
     detailLine('처음 한 번','브라우저가 음성을 허용하도록 이 기기에서 음성 테스트를 눌러줘. 새로 연 페이지에서 다시 필요할 수 있어.');
     var voice = el('button','text-button payment-confirm','음성 테스트');
-    voice.disabled = !window.speechSynthesis;
+    voice.disabled = !speechAvailable();
     voice.addEventListener('click',function () { state.sound = true; store(CACHE + '-sound',true); activateSound(); renderSoundButton(); speak('알림 테스트야. 다른 작업을 할 때도 일정 시간이 다가오면 알려줄게. 브라우저는 닫지 말아줘.'); });
     $('detail-content').appendChild(voice);
     var feedback = el('p','payment-feedback'); feedback.setAttribute('role','status'); $('detail-content').appendChild(feedback);
     var delayed = el('button','text-button payment-confirm','1분 뒤 백그라운드 테스트');
-    delayed.disabled = !window.speechSynthesis || backgroundTestTimer !== null;
+    delayed.disabled = !speechAvailable() || backgroundTestTimer !== null;
     delayed.addEventListener('click',function () {
       state.sound = true; store(CACHE + '-sound',true); activateSound(); renderSoundButton();
       delayed.disabled = true;
@@ -642,7 +695,8 @@
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
   $('today-briefing').addEventListener('click',openTodayBriefing);
   $('payment-connect').addEventListener('click',openPaymentConnection);
-  $('background-setup').addEventListener('click',openBackgroundSetup);
+  $('payment-pet-pause').addEventListener('click',function () { var paused = window.DashboardPaymentPet.toggle(); this.textContent = paused ? '다시 밀기' : '잠깐 쉬기'; this.setAttribute('aria-pressed',String(paused)); this.setAttribute('aria-label',paused ? '고양이 움직임 다시 시작' : '고양이 움직임 멈추기'); });
+  $('background-setup').addEventListener('click',openBrotherPrompt);
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {
       if (state.sound && state.soundBlocked) { activateSound(); return; }
@@ -652,7 +706,7 @@
         activateSound();
         var due = state.sheetOK && Date.now() - state.savedAt <= 5 * 60000 ? S.dueAlerts(state.events,{},now()) : [];
         speak(!$('alert').hidden && due.length ? due.map(S.alertSpeech).join(' ') : '음성 알림을 켰어. 일정과 준비·이동시간에 맞춰 알려줄게.');
-      } else { state.soundBlocked = false; if (window.speechSynthesis) { window.speechSynthesis.cancel(); state.speech = []; } }
+      } else { state.soundBlocked = false; stopSpeech(); }
       renderSoundButton();
   });
   state.sound = read(CACHE + '-sound') !== false;

@@ -28,6 +28,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const props = PropertiesService.getScriptProperties();
     if (!props.getProperty('FAMILY_KEY') || body.key !== props.getProperty('FAMILY_KEY')) return json_({ok:false,error:'연결 코드를 확인해줘.'});
+    if (body.action === 'tts') return json_(synthesizeDashboardVoice_(body,props));
     // A deployed web app uses the bound spreadsheet, never a caller-provided ID.
     const ss = SpreadsheetApp.openById(props.getProperty('SPREADSHEET_ID'));
     if (!ss || ss.getId() !== props.getProperty('SPREADSHEET_ID')) throw new Error('저장 연결을 확인해줘.');
