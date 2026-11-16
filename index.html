@@ -7,21 +7,23 @@
   <meta name="theme-color" content="#eef4f7">
   <title>우리 집 대시보드</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261116-readable">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css?v=20261110-reservation-inline">
+  <link rel="stylesheet" href="legacy-look.css?v=20261116-melbourne">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
   <script defer src="config.js?v=20261110-pet-voice"></script>
   <script defer src="schedule.js?v=20261110-payments2"></script>
   <script defer src="weather-scene.js"></script>
-  <script defer src="facilities.js?v=20261014-facilities"></script>
-  <script defer src="briefing.js?v=20261110"></script>
+  <script defer src="facilities.js?v=20261116-resumed"></script>
+  <script defer src="house-cat.js?v=20261116-cat-routine"></script>
+  <link rel="stylesheet" href="house-cat.css?v=20261116-cat-routine">
+  <script defer src="briefing.js?v=20261116-melbourne"></script>
   <script defer src="payments.js?v=20261110"></script>
-  <script defer src="payment-pet.js?v=20261110"></script>
+  <script defer src="payment-pet.js?v=20261116-cat-routine"></script>
   <script defer src="cloud-voice.js?v=20261110"></script>
   <script defer src="handoff.js?v=20261110"></script>
-  <script defer src="app.js?v=20261110-reservation-inline"></script>
+  <script defer src="app.js?v=20261116-melbourne"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -53,17 +55,17 @@
 
     <section class="day-header card" aria-label="현재 날짜와 시각">
       <div><p id="full-date"></p><h1 id="day-title">오늘</h1></div>
-      <time id="clock"></time>
+  <time id="clock" aria-label="한국 현재 시각"></time>
     </section>
 
     <section class="message-band card" aria-label="오늘의 한마디">
       <p id="message-source" hidden>오늘의 한마디</p>
       <span id="sync-status" class="sr-only" role="status">일정 불러오는 중</span>
-      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy" tabindex="0" aria-label="오늘의 한마디 · 긴 문구는 좌우로 스크롤할 수 있어요"><div class="message-track"><strong id="return-countdown" hidden></strong><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div></div>
+      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy" tabindex="0" aria-label="오늘의 한마디 · 긴 문구는 좌우로 스크롤할 수 있어요"><div class="message-track"><strong id="return-countdown" hidden></strong><time id="australia-time" title="누나가 있는 멜버른의 현지 시각 · 서머타임 자동 반영" hidden></time><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div></div>
     </section>
 
     <div class="schedule-layout card">
-      <section id="payment-section" hidden aria-label="결제할 것"><div id="payment-reminders"></div><button id="payment-pet-pause" class="text-button pet-pause" aria-pressed="false" aria-label="고양이 움직임 멈추기">잠깐 쉬기</button></section>
+      <section id="payment-section" hidden aria-label="결제할 것"><div id="payment-reminders"></div></section>
       <section class="today-section" aria-labelledby="today-heading">
         <div hidden><h2 id="today-heading">오늘 일정</h2><span id="today-count"></span></div>
         <div id="today-events" class="today-events"><p class="empty">일정을 불러오고 있어요.</p></div>
@@ -83,13 +85,14 @@
       <button id="today-briefing" class="text-button" aria-haspopup="dialog" disabled>오늘 일정 브리핑</button>
       <button id="payment-connect" class="text-button" aria-haspopup="dialog">결제기록 연결</button>
       <button id="background-setup" class="text-button" aria-haspopup="dialog">지운용 프롬프트</button>
+      <button id="payment-pet-pause" class="text-button" aria-pressed="false" aria-label="고양이 움직임 멈추기">고양이 쉬기</button>
       <div class="header-tools">
         <button id="sound-toggle" class="icon-button" title="음성 알림 켜기" aria-label="음성 알림 켜기" aria-pressed="false"><i data-lucide="volume-x"></i></button>
         <button id="refresh" class="icon-button" title="새로고침" aria-label="새로고침"><i data-lucide="refresh-cw"></i></button>
       </div>
     </footer>
     <aside id="facility-panel" class="card" hidden aria-label="시설 안내">
-      <button id="facility-gym" class="facility-option" aria-haspopup="dialog" title="헬스장 운영시간과 상태"><strong>헬스장</strong><span id="gym-summary">회원권 일시 중지</span><i data-lucide="chevron-right"></i></button>
+      <button id="facility-gym" class="facility-option" aria-haspopup="dialog" title="헬스장 운영시간과 상태"><strong>헬스장</strong><span id="gym-summary">회원권 이용 가능 · 운동 재개</span><i data-lucide="chevron-right"></i></button>
       <button id="facility-roof" class="facility-option" aria-haspopup="dialog" title="옥상 운영시간과 상태"><strong>옥상</strong><span id="roof-summary">폐쇄</span><i data-lucide="chevron-right"></i></button>
       <button id="facility-library" class="facility-option" aria-haspopup="dialog" title="도서관 운영시간과 상태"><strong>도서관</strong><span id="library-hours">운영시간 확인 중</span><i data-lucide="chevron-right"></i></button>
     </aside>

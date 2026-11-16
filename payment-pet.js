@@ -4,14 +4,15 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   function reset() { movers.forEach(function (m) { m.dispose(); }); movers = []; }
   function attach(lane,convoy) {
-    var animation = null, timer = null, stopped = false, hovered = false, position = 0;
-    function shouldRest() { return stopped || paused || reduced.matches || document.hidden || hovered || lane.contains(document.activeElement) || !document.getElementById('detail-overlay').hidden; }
+    var animation = null, timer = null, stopped = false, hovered = false, offscreen = false, position = 0;
+    function shouldRest() { return stopped || paused || reduced.matches || document.hidden || offscreen || hovered || lane.contains(document.activeElement) || !document.getElementById('detail-overlay').hidden; }
     function rest() { clearTimeout(timer); timer = null; if (animation) animation.pause(); convoy.classList.remove('is-pushing'); }
     function move() {
       if (shouldRest()) return rest();
       var bound = Math.min(96,Math.max(0,lane.clientWidth - convoy.offsetWidth - 4));
-      if (!bound) return rest();
+      if (!bound) { rest(); convoy.classList.add('is-pushing'); return; }
       if (animation && animation.playState === 'paused') { convoy.classList.add('is-pushing'); animation.play(); return; }
+      if (animation || timer) return;
       position = Math.min(position,bound);
       var target = position < bound / 2 ? bound * (.65 + Math.random() * .35) : bound * Math.random() * .35;
       var seconds = Math.max(2.4,Math.abs(target - position) / (7 + Math.random() * 8));
@@ -19,7 +20,7 @@
       animation = convoy.animate([{transform:'translateX(' + position + 'px)'},{transform:'translateX(' + target + 'px)'}],{duration:seconds * 1000,easing:'linear',fill:'forwards'});
       animation.onfinish = function () {
         position = target; convoy.style.transform = 'translateX(' + position + 'px)'; animation.cancel(); animation = null;
-        convoy.classList.remove('is-pushing'); timer = setTimeout(move,1000 + Math.random() * 1800);
+        convoy.classList.remove('is-pushing'); timer = setTimeout(function () { timer = null; move(); },1000 + Math.random() * 1800);
       };
     }
     function enter() { hovered = true; rest(); }
@@ -32,8 +33,10 @@
     lane.addEventListener('focusin',rest); lane.addEventListener('focusout',function () { setTimeout(move,0); });
     var observer = window.ResizeObserver ? new ResizeObserver(resized) : null;
     if (observer) observer.observe(lane);
-    var mover = {update:move,dispose:function () { stopped = true; rest(); if (animation) animation.cancel(); if (observer) observer.disconnect(); }};
-    movers.push(mover); move();
+    var visibility = window.IntersectionObserver ? new IntersectionObserver(function (entries) { offscreen = !entries[0].isIntersecting; move(); }) : null;
+    if (visibility) visibility.observe(lane);
+    var mover = {update:move,dispose:function () { stopped = true; rest(); if (animation) animation.cancel(); if (observer) observer.disconnect(); if (visibility) visibility.disconnect(); movers = movers.filter(function (item) { return item !== mover; }); }};
+    movers.push(mover); move(); return mover;
   }
   function update() { movers.forEach(function (m) { m.update(); }); }
   document.addEventListener('visibilitychange',update);

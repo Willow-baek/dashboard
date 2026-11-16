@@ -103,6 +103,8 @@
   function renderMessage() {
     var comeback = B.countdown(state.settings,config.returnCountdown,now());
     $('return-countdown').hidden = !comeback;
+    $('australia-time').hidden = !comeback;
+    if (comeback) { $('australia-time').textContent = B.australiaClock(now()); $('australia-time').dateTime = now().toISOString(); }
     document.querySelector('.message-band').classList.toggle('comeback-band',!!comeback);
     var quote = S.text(state.settings.quote);
     var applicable = !S.text(state.settings.quote_date) || S.date(state.settings.quote_date) === today();
@@ -270,6 +272,12 @@
   function row(e, isToday) {
     var status = isToday ? eventState(e) : null;
     var button = el('button','event-row' + (isToday ? ' today-event ' + status.className : ''));
+    if (!e.cancelled && !e.needsTime && !S.isOngoing(e,now())) {
+      var start = new Date(e.date + 'T' + (e.time || '23:59') + ':00+09:00').getTime();
+      button.setAttribute('data-cat-start',String(start));
+      button.setAttribute('data-cat-timed',String(!!e.time));
+      button.setAttribute('data-cat-urgency',String(start - (e.travel || 0) * 60000));
+    }
     var diff = Math.round((new Date(e.date + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 86400000);
     var dday = diff === 0 ? 'D-day' : diff > 0 ? 'D-' + diff : '지난 일정';
     var ongoing = S.isOngoing(e,now());
@@ -277,7 +285,7 @@
     if (!e.endDate) date.appendChild(el('small','','(' + ['일','월','화','수','목','금','토'][S.weekday(e.date)] + ')'));
     button.appendChild(el('span','row-dday',ongoing ? '진행 중' : isToday ? '오늘' : dday)); button.appendChild(date);
     button.appendChild(el('span','row-time' + (e.endDate ? ' period-time' : '') + (e.needsTime ? ' needs-time' : ''),ongoing ? S.periodLabel(e.endDate,e.endDate) + '까지' : e.endDate && !e.time ? '기간 일정' : eventTimeLabel(e)));
-    button.appendChild(el('span','row-title',e.title));
+    var title = el('span','row-title'); title.appendChild(el('span','row-title-text',e.title)); button.appendChild(title);
     button.appendChild(el('span','row-meta',repeatLabel(e) + (e.changed ? ' · 변경' : '')));
     // Payment reminders live together above the schedule, not duplicated on every lesson.
     if (isToday && !ongoing && (status.className === 'urgent' || status.className === 'past' || e.travel && e.time)) {
@@ -408,6 +416,7 @@
   function renderAll() {
     state.events = S.expand(displaySchedules(),state.exceptions,S.weekStart(today()),S.addDays(today(),42));
     renderClock(); renderStrip(); renderCalendar(); if (state.loaded) renderSchedules(); renderMessage(); renderFacilities();
+    if (window.DashboardHouseCat) window.DashboardHouseCat.refresh();
     $('today-briefing').disabled = !state.loaded;
     updateBriefing();
     if (window.LegacyTheme) window.LegacyTheme.update(state.weatherOK && state.weather ? state.weather.current.weather_code : 0,new Date(Date.now() + 9 * 3600000).getUTCHours());
@@ -695,7 +704,7 @@
   $('alert-close').addEventListener('click',function () { $('alert').hidden = true; });
   $('today-briefing').addEventListener('click',openTodayBriefing);
   $('payment-connect').addEventListener('click',openPaymentConnection);
-  $('payment-pet-pause').addEventListener('click',function () { var paused = window.DashboardPaymentPet.toggle(); this.textContent = paused ? '다시 밀기' : '잠깐 쉬기'; this.setAttribute('aria-pressed',String(paused)); this.setAttribute('aria-label',paused ? '고양이 움직임 다시 시작' : '고양이 움직임 멈추기'); });
+  $('payment-pet-pause').addEventListener('click',function () { var paused = window.DashboardPaymentPet.toggle(); this.textContent = paused ? '고양이 놀기' : '고양이 쉬기'; this.setAttribute('aria-pressed',String(paused)); this.setAttribute('aria-label',paused ? '고양이 움직임 다시 시작' : '고양이 움직임 멈추기'); if (window.DashboardHouseCat) window.DashboardHouseCat.refresh(); });
   $('background-setup').addEventListener('click',openBrotherPrompt);
   $('refresh').addEventListener('click',function () { loadSheet(); loadWeather(); });
   $('sound-toggle').addEventListener('click',function () {

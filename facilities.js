@@ -31,7 +31,7 @@
     if (customLibraryHours && !override) status = '별도 안내된 운영시간 확인';
     return { name:facility.name, status:override || status,
       hours:customLibraryHours ? [['운영시간',text(settings.library_hours)]] : facility.lines,
-      membership:id === 'gym' ? text(settings.gym_status) || '지운이 회원권 일시 중지' : '',
+      membership:id === 'gym' ? (!text(settings.gym_status) || /^(지운이 )?회원권 일시 중지$/.test(text(settings.gym_status)) ? '지운이 회원권 이용 가능 · 운동 재개' : text(settings.gym_status)) : '',
       basis:customLibraryHours ? '시트에 입력한 운영시간 안내' : '기존 대시보드 시간표. 현장 운영시간은 달라질 수 있어요.' };
   }
   return { info:info };

@@ -12,7 +12,7 @@ test('gym hours distinguish weekly closure, opening boundaries and Sunday hours'
 test('personal membership suspension does not imply a closed gym', () => {
   const info=F.info('gym',{gym_status:'지운이 회원권 일시 중지'},at('2026-10-14T12:00:00'));
   assert.match(info.status,/운영시간 중/);
-  assert.equal(info.membership,'지운이 회원권 일시 중지');
+  assert.equal(info.membership,'지운이 회원권 이용 가능 · 운동 재개');
   assert.equal(F.info('gym',{gym_facility_status:'임시 휴무'},at('2026-10-14T12:00:00')).status,'임시 휴무');
 });
 test('roof closure takes precedence without removing its previous hours', () => {

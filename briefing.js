@@ -59,5 +59,8 @@
     return { days:days, label:days > 0 ? '누나 컴백 D-' + days : days === 0 ? '누나 컴백 D-DAY' : '누나 컴백 D+' + Math.abs(days),
       message:S.text(settings.return_message || defaults.message), date:target };
   }
-  return { build:build, status:status, duration:duration, countdown:countdown };
+  function australiaClock(now) {
+    return '호주·멜버른 지금 ' + new Intl.DateTimeFormat('ko-KR',{timeZone:'Australia/Melbourne',hour:'numeric',minute:'2-digit',hour12:true}).format(now);
+  }
+  return { build:build, status:status, duration:duration, countdown:countdown, australiaClock:australiaClock };
 }));

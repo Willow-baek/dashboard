@@ -1,6 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const B = require('../briefing.js');
+
+test('Melbourne clock follows summer time, winter time and local midnight', () => {
+  assert.equal(B.australiaClock(new Date('2026-11-16T12:00:00Z')),'호주·멜버른 지금 오후 11:00');
+  assert.equal(B.australiaClock(new Date('2026-06-16T12:00:00Z')),'호주·멜버른 지금 오후 10:00');
+  assert.equal(B.australiaClock(new Date('2026-11-16T13:05:00Z')),'호주·멜버른 지금 오전 12:05');
+});
 const S = require('../schedule.js');
 const at = value => new Date(value + '+09:00');
 const event = (id,time,extra={}) => ({uid:id,id,date:'2026-11-11',title:id,time,...extra});
