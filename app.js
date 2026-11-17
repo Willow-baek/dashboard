@@ -106,6 +106,12 @@
     $('australia-time').hidden = !comeback;
     if (comeback) {
       var australiaNow = now(), australiaClock = B.australiaClock(australiaNow);
+      if (!$('australia-digits') || !$('australia-period')) {
+        clear($('australia-time'));
+        $('australia-time').appendChild(el('span','australia-label','호주는 지금'));
+        var digits = el('strong'); digits.id = 'australia-digits'; $('australia-time').appendChild(digits);
+        var period = el('span'); period.id = 'australia-period'; $('australia-time').appendChild(period);
+      }
       $('australia-digits').textContent = australiaClock.time;
       $('australia-period').textContent = australiaClock.period;
       $('australia-time').dateTime = australiaNow.toISOString();
