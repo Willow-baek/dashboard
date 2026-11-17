@@ -104,7 +104,12 @@
     var comeback = B.countdown(state.settings,config.returnCountdown,now());
     $('return-countdown').hidden = !comeback;
     $('australia-time').hidden = !comeback;
-    if (comeback) { $('australia-time').textContent = B.australiaClock(now()); $('australia-time').dateTime = now().toISOString(); }
+    if (comeback) {
+      var australiaNow = now(), australiaClock = B.australiaClock(australiaNow);
+      $('australia-digits').textContent = australiaClock.time;
+      $('australia-period').textContent = australiaClock.period;
+      $('australia-time').dateTime = australiaNow.toISOString();
+    }
     document.querySelector('.message-band').classList.toggle('comeback-band',!!comeback);
     var quote = S.text(state.settings.quote);
     var applicable = !S.text(state.settings.quote_date) || S.date(state.settings.quote_date) === today();

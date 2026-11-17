@@ -6,10 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#eef4f7">
   <title>우리 집 대시보드</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Space+Mono:wght@700&display=swap">
   <link rel="stylesheet" href="styles.css?v=20261116-readable">
   <link rel="stylesheet" href="weather-scene.css">
-  <link rel="stylesheet" href="legacy-look.css?v=20261117-australia-readable">
+  <link rel="stylesheet" href="legacy-look.css?v=20261117-australia-ampm">
   <script defer src="vendor/rrule.js"></script>
   <script defer src="vendor/lucide.min.js"></script>
   <script defer src="config.js?v=20261110-pet-voice"></script>
@@ -18,12 +18,12 @@
   <script defer src="facilities.js?v=20261116-resumed"></script>
   <script defer src="house-cat.js?v=20261116-cat-routine"></script>
   <link rel="stylesheet" href="house-cat.css?v=20261116-cat-routine">
-  <script defer src="briefing.js?v=20261117-australia-readable"></script>
+  <script defer src="briefing.js?v=20261117-australia-ampm"></script>
   <script defer src="payments.js?v=20261110"></script>
   <script defer src="payment-pet.js?v=20261116-cat-routine"></script>
   <script defer src="cloud-voice.js?v=20261110"></script>
   <script defer src="handoff.js?v=20261110"></script>
-  <script defer src="app.js?v=20261116-melbourne"></script>
+  <script defer src="app.js?v=20261117-australia-ampm"></script>
 </head>
 <body>
   <div id="bg-wrap" aria-hidden="true">
@@ -61,7 +61,7 @@
     <section class="message-band card" aria-label="오늘의 한마디">
       <p id="message-source" hidden>오늘의 한마디</p>
       <span id="sync-status" class="sr-only" role="status">일정 불러오는 중</span>
-      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy" tabindex="0" aria-label="오늘의 한마디 · 긴 문구는 좌우로 스크롤할 수 있어요"><div class="message-track"><strong id="return-countdown" hidden></strong><time id="australia-time" title="누나가 있는 멜버른의 현지 시각 · 서머타임 자동 반영" hidden></time><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div></div>
+      <div class="message-body"><span id="message-symbol" aria-hidden="true">🙋🏻‍♀️</span><div class="message-copy" tabindex="0" aria-label="오늘의 한마디 · 긴 문구는 좌우로 스크롤할 수 있어요"><div class="message-track"><strong id="return-countdown" hidden></strong><time id="australia-time" title="누나가 있는 멜버른의 현지 시각 · 서머타임 자동 반영" hidden><span class="australia-label">호주는 지금</span><strong id="australia-digits"></strong><span id="australia-period"></span></time><p id="message-text">날씨를 확인하고 있어. 나가기 전에 비 오는지 보고, 쌀쌀하면 겉옷 챙겨가.</p></div></div></div>
     </section>
 
     <div class="schedule-layout card">

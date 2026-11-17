@@ -60,7 +60,9 @@
       message:S.text(settings.return_message || defaults.message), date:target };
   }
   function australiaClock(now) {
-    return '호주는 지금 ' + new Intl.DateTimeFormat('ko-KR',{timeZone:'Australia/Melbourne',hour:'2-digit',minute:'2-digit',hour12:true}).format(now);
+    var parts = new Intl.DateTimeFormat('en-US',{timeZone:'Australia/Melbourne',hour:'2-digit',minute:'2-digit',hour12:true}).formatToParts(now);
+    function part(type) { return parts.filter(function (item) { return item.type === type; })[0].value; }
+    return {time:part('hour') + ':' + part('minute'),period:part('dayPeriod')};
   }
   return { build:build, status:status, duration:duration, countdown:countdown, australiaClock:australiaClock };
 }));

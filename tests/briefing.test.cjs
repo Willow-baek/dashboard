@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const B = require('../briefing.js');
 
 test('Melbourne clock follows summer time, winter time and local midnight', () => {
-  assert.equal(B.australiaClock(new Date('2026-11-16T12:00:00Z')),'호주는 지금 오후 11:00');
-  assert.equal(B.australiaClock(new Date('2026-06-16T12:00:00Z')),'호주는 지금 오후 10:00');
-  assert.equal(B.australiaClock(new Date('2026-11-16T13:05:00Z')),'호주는 지금 오전 12:05');
-  assert.equal(B.australiaClock(new Date('2026-11-16T14:05:00Z')),'호주는 지금 오전 01:05');
+  assert.deepEqual(B.australiaClock(new Date('2026-11-16T12:00:00Z')),{time:'11:00',period:'PM'});
+  assert.deepEqual(B.australiaClock(new Date('2026-06-16T12:00:00Z')),{time:'10:00',period:'PM'});
+  assert.deepEqual(B.australiaClock(new Date('2026-11-16T13:05:00Z')),{time:'12:05',period:'AM'});
+  assert.deepEqual(B.australiaClock(new Date('2026-11-16T14:05:00Z')),{time:'01:05',period:'AM'});
 });
 const S = require('../schedule.js');
 const at = value => new Date(value + '+09:00');
