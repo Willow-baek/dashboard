@@ -60,7 +60,7 @@
       message:S.text(settings.return_message || defaults.message), date:target };
   }
   function australiaClock(now) {
-    return '호주·멜버른 지금 ' + new Intl.DateTimeFormat('ko-KR',{timeZone:'Australia/Melbourne',hour:'numeric',minute:'2-digit',hour12:true}).format(now);
+    return '호주는 지금 ' + new Intl.DateTimeFormat('ko-KR',{timeZone:'Australia/Melbourne',hour:'2-digit',minute:'2-digit',hour12:true}).format(now);
   }
   return { build:build, status:status, duration:duration, countdown:countdown, australiaClock:australiaClock };
 }));

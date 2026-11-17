@@ -6,7 +6,7 @@
 .message-track { display: inline-flex; align-items: baseline; gap: 14px; white-space: nowrap; width: max-content; max-width: none; }
 #return-countdown { display: inline; font-size: clamp(20px, 2.5vw, 30px); line-height: 1.35; font-variant-numeric: tabular-nums; }
 #return-countdown[hidden] { display: none; }
-#australia-time { font-size: clamp(12px, 1.2vw, 15px); font-weight: 400; color: inherit; opacity: .72; font-variant-numeric: tabular-nums; }
+#australia-time { font-size: clamp(18px, 2vw, 24px); font-weight: 500; color: inherit; opacity: .9; font-variant-numeric: tabular-nums; }
 #australia-time[hidden] { display: none; }
 #australia-time::after { content: ' ·'; }
 .message-track #message-text { display: inline; margin: 0; white-space: nowrap; overflow-wrap: normal; font-size: clamp(19px, 2vw, 25px); }
