@@ -12,6 +12,10 @@ test('gym hours distinguish weekly closure, opening boundaries and Sunday hours'
   assert.match(F.info('gym',{},at('2026-10-18T09:00:00')).status,/운영시간 중/);
 });
 test('recycling windows include overnight hours and exclude the exact closing time in Seoul', () => {
+  assert.equal(F.ids[0],'recycling');
+  const notes=F.info('recycling').notes;
+  assert.match(notes[0][1],/종량제봉투.*상시 배출 가능/);
+  assert.match(notes[1][1],/하얀색 1101호 카드.*상시 가능/);
   const allowed = stamp => F.info('recycling',{},at(stamp)).status.includes('배출 가능');
   assert.equal(allowed('2026-11-16T07:59:00'),false);
   assert.equal(allowed('2026-11-16T08:00:00'),true);

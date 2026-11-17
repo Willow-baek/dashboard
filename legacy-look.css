@@ -190,6 +190,11 @@ footer { margin: 0; padding: 4px 14px; min-height: 44px; color: inherit; font-si
 footer .text-button { font-size: 12px; min-height: 34px; }
 #weather-summary { opacity: .75; }
 #facility-panel { bottom: 65px; right: 16px; padding: 8px 16px; max-height: min(65vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+#facility-toggle { background: #dcecff; color: #183c69; border: 1px solid #91b4dd; border-radius: 10px; min-height: 40px; padding: 8px 14px; font-size: 14px; font-weight: 700; }
+#facility-toggle:hover, #facility-toggle[aria-expanded="true"] { background: #c4ddff; }
+#facility-toggle:focus-visible { outline: 2px solid #5888c0; outline-offset: 3px; }
+#facility-recycling { color: #a6212c; background: #ffe4e5; border-bottom: 0; border-radius: 9px; padding: 10px 8px; margin: 4px 0; }
+#facility-panel #facility-recycling span { color: inherit; opacity: 1; }
 .facility-contact { display: inline-block; color: inherit; padding: 8px 0; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 #facility-panel span { color: inherit; opacity: .75; }
 .facility-option { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; gap: 10px; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; font-size: 14px; }

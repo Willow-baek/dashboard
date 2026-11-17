@@ -415,13 +415,14 @@
         option.appendChild(el('strong','',info.name));
         var summary = el('span'); summary.id = summaryId; option.appendChild(summary); $('facility-panel').appendChild(option);
       }
+      if (id === 'recycling' && $('facility-panel').firstElementChild !== $('facility-recycling')) $('facility-panel').insertBefore($('facility-recycling'),$('facility-panel').firstChild);
       $(summaryId).textContent = info.membership || info.status.replace(' · 기존 시간표 기준','').replace(' · 요일 기준','');
     });
     if (state.facilityDetail && !$('detail-overlay').hidden) renderFacilityDetail(state.facilityDetail);
   }
   function renderFacilityDetail(id) {
     var info = window.Facilities.info(id,state.settings,now()); clear($('detail-content'));
-    detailLine('현재 상태',info.status);
+    detailLine(id === 'recycling' ? '재활용 분리수거 현재 상태' : '현재 상태',info.status);
     if (info.membership) detailLine('지운이 회원권',info.membership);
     info.hours.forEach(function (line) { detailLine(line[0] + ' 운영시간',line[1]); });
     (info.phones || []).forEach(function (phone) { var line = detailLine('연락처',''); var link = el('a','facility-contact',phone); link.href = 'tel:' + phone.replace(/[^\d+]/g,''); line.appendChild(link); });

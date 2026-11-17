@@ -25,7 +25,7 @@
     ventilation: { name:'화장실 환풍기 고장', phones:['1577-7713'], lines:[],
       notes:[['업체명','에어앤피플'],['운영시간','별도 안내 없음 · 전화로 확인해 주세요.']] },
     recycling: { name:'분리수거·대형폐기물', lines:[],
-      notes:[['분리수거 가능 시간 ①','월요일 오전 8:00 ~ 화요일 오전 10:00'],['분리수거 가능 시간 ②','목요일 오전 8:00 ~ 금요일 오전 10:00'],['대형생활폐기물 1단계','마포구청 대형생활폐기물 인터넷 신청'],['대형생활폐기물 2단계','폐기 스티커 발급'],['대형생활폐기물 3단계','지하 1층 지정 장소에 폐기물 배출']] }
+      notes:[['일반쓰레기','종량제봉투 사용 · 상시 배출 가능'],['음식물쓰레기','하얀색 1101호 카드 태그 후 배출 · 상시 가능'],['분리수거 가능 시간 ①','월요일 오전 8:00 ~ 화요일 오전 10:00'],['분리수거 가능 시간 ②','목요일 오전 8:00 ~ 금요일 오전 10:00'],['대형생활폐기물 1단계','마포구청 대형생활폐기물 인터넷 신청'],['대형생활폐기물 2단계','폐기 스티커 발급'],['대형생활폐기물 3단계','지하 1층 지정 장소에 폐기물 배출']] }
   };
   function text(value) { return value == null ? '' : String(value).trim(); }
   function info(id, settings, now) {
@@ -56,5 +56,5 @@
       membership:id === 'gym' ? (!text(settings.gym_status) || /^(지운이 )?회원권 일시 중지$/.test(text(settings.gym_status)) ? '지운이 회원권 이용 가능 · 운동 재개' : text(settings.gym_status)) : '',
       basis:customLibraryHours ? '시트에 입력한 운영시간 안내' : id === 'roof' ? '기존 대시보드 안내. 현장 운영시간은 달라질 수 있어요.' : '가족이 제공한 안내 기준 · 한국 시간. 변경·공휴일 운영은 담당처에 확인해 주세요.' };
   }
-  return { info:info, ids:['gym','roof','library','office','rental','ventilation','recycling'] };
+  return { info:info, ids:['recycling','gym','roof','library','office','rental','ventilation'] };
 }));
