@@ -407,9 +407,15 @@
     renderCalendar();
   }
   function renderFacilities() {
-    ['gym','roof','library'].forEach(function (id) {
+    (window.Facilities.ids || ['gym','roof','library']).forEach(function (id) {
       var info = window.Facilities.info(id,state.settings,now());
-      $(id === 'library' ? 'library-hours' : id + '-summary').textContent = info.membership || info.status.replace(' · 기존 시간표 기준','');
+      var summaryId = id === 'library' ? 'library-hours' : id + '-summary';
+      if (!$('facility-' + id)) {
+        var option = el('button','facility-option'); option.id = 'facility-' + id; option.setAttribute('aria-haspopup','dialog');
+        option.appendChild(el('strong','',info.name));
+        var summary = el('span'); summary.id = summaryId; option.appendChild(summary); $('facility-panel').appendChild(option);
+      }
+      $(summaryId).textContent = info.membership || info.status.replace(' · 기존 시간표 기준','').replace(' · 요일 기준','');
     });
     if (state.facilityDetail && !$('detail-overlay').hidden) renderFacilityDetail(state.facilityDetail);
   }
@@ -418,10 +424,13 @@
     detailLine('현재 상태',info.status);
     if (info.membership) detailLine('지운이 회원권',info.membership);
     info.hours.forEach(function (line) { detailLine(line[0] + ' 운영시간',line[1]); });
+    (info.phones || []).forEach(function (phone) { var line = detailLine('연락처',''); var link = el('a','facility-contact',phone); link.href = 'tel:' + phone.replace(/[^\d+]/g,''); line.appendChild(link); });
+    (info.notes || []).forEach(function (line) { detailLine(line[0],line[1]); });
+    (info.links || []).forEach(function (item) { var line = detailLine('바로가기',''); var link = el('a','facility-contact',item[0]); link.href = item[1]; link.target = '_blank'; link.rel = 'noopener noreferrer'; line.appendChild(link); });
     detailLine('안내 기준',info.basis);
   }
   function openFacility(id) {
-    openDialog(window.Facilities.info(id,state.settings,now()).name,'운영시간 · 현재 상태');
+    openDialog(window.Facilities.info(id,state.settings,now()).name,'시설·생활 안내');
     state.facilityDetail = id; renderFacilityDetail(id);
   }
   function renderAll() {
@@ -699,7 +708,7 @@
   $('calendar-next').addEventListener('click',function () { moveCalendar(1); });
   $('calendar-today').addEventListener('click',function () { state.calendarDate = today(); renderCalendar(); });
   $('facility-toggle').addEventListener('click',function () { $('facility-panel').hidden = !$('facility-panel').hidden; $('facility-toggle').setAttribute('aria-expanded',String(!$('facility-panel').hidden)); });
-  ['gym','roof','library'].forEach(function (id) { $('facility-' + id).addEventListener('click',function () { openFacility(id); }); });
+  $('facility-panel').addEventListener('click',function (event) { var option = event.target.closest('.facility-option'); if (option && this.contains(option)) openFacility(option.id.replace('facility-','')); });
   $('detail-close').addEventListener('click',closeDialog);
   $('detail-overlay').addEventListener('click',function (e) { if (e.target === $('detail-overlay')) closeDialog(); });
   document.addEventListener('keydown',function (e) {

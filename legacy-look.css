@@ -189,7 +189,8 @@ footer #sound-toggle.needs-activation { color: var(--urgent-text,#d12424); }
 footer { margin: 0; padding: 4px 14px; min-height: 44px; color: inherit; font-size: 12px; }
 footer .text-button { font-size: 12px; min-height: 34px; }
 #weather-summary { opacity: .75; }
-#facility-panel { bottom: 65px; right: 16px; padding: 8px 16px; }
+#facility-panel { bottom: 65px; right: 16px; padding: 8px 16px; max-height: min(65vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+.facility-contact { display: inline-block; color: inherit; padding: 8px 0; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 #facility-panel span { color: inherit; opacity: .75; }
 .facility-option { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; gap: 10px; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; font-size: 14px; }
 .facility-option:last-child { border-bottom: 0; }
